@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "710779022078",
+    "project_id": "nivvesh-app",
+    "storage_bucket": "nivvesh-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710779022078:android:60f99a5e95b61a4f3493af",
+        "android_client_info": {
+          "package_name": "com.nivvesh.nivvesh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPQg0T8nK-aP4Nf6s_xG3b9W3eidQ3DO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
