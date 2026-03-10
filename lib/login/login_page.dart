@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nivvesh/banks/screens/bank_inappWebView.dart';
-import 'package:nivvesh/banks/screens/bank_webview.dart';
-import 'package:nivvesh/banks/screens/support_webview.dart';
+import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
+import 'package:nivvesh/webview/screens/bank_webview.dart';
+import 'package:nivvesh/webview/screens/support_webview.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
