@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
-import 'package:nivvesh/webview/screens/bank_webview.dart';
 import 'package:nivvesh/login/api_service.dart';
 import 'package:nivvesh/login/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
