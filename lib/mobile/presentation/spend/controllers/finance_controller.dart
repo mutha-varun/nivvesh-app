@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
+import 'package:nivvesh/mobile/core/constants/payment_category.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:nivvesh/mobile/domain/models/finance_model.dart';
 
@@ -79,32 +80,37 @@ class FinanceController extends ChangeNotifier {
     );
   }
 
-  String _inferCategory(String bodyLower, bool isDebit) {
+  String _inferCategory(String body, bool isDebit) {
     if (!isDebit) return 'Credit';
-    if (bodyLower.contains('swiggy') || bodyLower.contains('zomato') ||
-        bodyLower.contains('food') || bodyLower.contains('restaurant')) {
-      return 'Food & Dining';
+    final bodyLower = body.toLowerCase();
+
+    final Map<String, String> merchantCategoryCache = {};
+
+    for (var merchant in merchantCategoryCache.keys) {
+      if (bodyLower.contains(merchant)) {
+        return merchantCategoryCache[merchant]!;
+      }
     }
-    if (bodyLower.contains('uber') || bodyLower.contains('ola') ||
-        bodyLower.contains('metro') || bodyLower.contains('rapido')) {
-      return 'Transport';
+
+    for (var entry in PaymentCategories.vpaIdentifiers.entries) {
+      for (var id in entry.value) {
+        if (bodyLower.contains(id)) {
+          merchantCategoryCache[id] = entry.key; 
+          return entry.key;
+        }
+      }
     }
-    if (bodyLower.contains('amazon') || bodyLower.contains('flipkart') ||
-        bodyLower.contains('myntra') || bodyLower.contains('shopping')) {
-      return 'Shopping';
+
+    for (var entry in PaymentCategories.keywords.entries) {
+      for (var keyword in entry.value) {
+        if (bodyLower.contains(keyword)) {
+          merchantCategoryCache[keyword] = entry.key;
+          return entry.key;
+        }
+      }
     }
-    if (bodyLower.contains('netflix') || bodyLower.contains('hotstar') ||
-        bodyLower.contains('spotify') || bodyLower.contains('youtube')) {
-      return 'Entertainment';
-    }
-    if (bodyLower.contains('electricity') || bodyLower.contains('bill') ||
-        bodyLower.contains('recharge') || bodyLower.contains('broadband')) {
-      return 'Bills & Utilities';
-    }
-    if (bodyLower.contains('atm') || bodyLower.contains('cash withdrawal')) {
-      return 'Cash Withdrawal';
-    }
-    return 'Other';
+
+    return PaymentCategories.uncategorized;
   }
 }
 
