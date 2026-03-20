@@ -48,4 +48,32 @@ class PaymentCategories {
     shopping: ['@paytmads', 'amzn', 'flipkt'],
     transport: ['@fastag', 'irctc', 'olacabs'],
   };
+
+  static const transactionContextKeywords = [
+    'upi',
+    'trf to',
+    'refno',
+    'a/c',
+    'ac no',
+    'mandate',
+    'towards',
+  ];
+
+  static const creditCategory = 'Credit';
+
+  static const creditKeywordHints = [
+    'credited',
+    'received',
+    'refund',
+    'cashback',
+  ];
+
+  static const debitKeywordHints = [
+    'debited',
+    'deducted',
+    'spent',
+    'paid',
+    'payment of',
+    'withdrawn',
+  ];
 }

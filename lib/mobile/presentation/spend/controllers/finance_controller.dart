@@ -1,118 +1,175 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:nivvesh/mobile/core/constants/payment_category.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:nivvesh/mobile/data/cache/sms.dart';
 import 'package:nivvesh/mobile/domain/models/finance_model.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class FinanceController extends ChangeNotifier {
+  FinanceController(this._dataSource) {
+    _init();
+  }
+
+  final SmsDataSource _dataSource;
   List<FinanceModel> _messages = [];
   bool _isLoading = false;
   String? _error;
 
-  List<FinanceModel> get messages => _messages;
+  List<FinanceModel> get messages => List.unmodifiable(_messages);
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  Future<void> _init() async {
+    _messages = await _dataSource.getAll();
+    notifyListeners();
+    await fetchMessages();
+  }
 
   Future<void> fetchMessages() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    final status = await Permission.sms.request();
-    if (!status.isGranted) {
-      _error = 'SMS permission denied. Please grant it in app settings.';
+    if (!(await Permission.sms.request().isGranted)) {
       _isLoading = false;
+      _error = 'SMS permission is required to read financial messages.';
       notifyListeners();
       return;
     }
 
-    final query = SmsQuery();
-    final smsList = await query.querySms(kinds: [SmsQueryKind.inbox]);
+    try {
+      final lastMessage = await _dataSource.getLatest();
+      final lastSyncDate = lastMessage?.date;
 
-    final parsed = <FinanceModel>[];
-    for (final sms in smsList) {
-      final model = _parseFinancialSms(sms);
-      if (model != null) parsed.add(model);
+      final smsList = await SmsQuery().querySms(kinds: [SmsQueryKind.inbox]);
+
+      final newParsedMessages = <FinanceModel>[];
+      for (final sms in smsList) {
+        if (lastSyncDate != null &&
+            sms.date != null &&
+            sms.date!.isBefore(lastSyncDate)) break;
+
+        final model = _parseFinancialSms(sms);
+        if (model != null) newParsedMessages.add(model);
+      }
+
+      if (newParsedMessages.isNotEmpty) {
+        await _dataSource.putAll(newParsedMessages);
+      }
+
+      _messages = await _dataSource.getAll();
+    } catch (e) {
+      _error = e.toString();
     }
 
-    parsed.sort((a, b) => b.date.compareTo(a.date));
-
-    _messages = parsed;
     _isLoading = false;
     notifyListeners();
   }
 
-  // Matches: INR 1,234.56 | Rs. 1234 | Rs 50.00 | ₹450
-  static final _amountRegex = RegExp(
-    r'(?:INR|Rs\.?|₹)\s*([\d,]+(?:\.\d{1,2})?)',
-    caseSensitive: false,
-  );
+  static final List<RegExp> _amountRegexes = [
+    RegExp(r'(?:INR|Rs\.?|₹)\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
+    RegExp(
+      r'(?:debited by|credited by|paid|payment(?:\s+of)?|withdrawn(?:\s+by)?|received|refund(?:\s+of)?|for)\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d{1,2})?)',
+      caseSensitive: false,
+    ),
+  ];
 
   static const _debitKeywords = [
     'debited', 'deducted', 'spent', 'paid', 'payment of', 'withdrawn',
   ];
-
   static const _creditKeywords = [
     'credited', 'received', 'refund', 'cashback',
   ];
+  static final _upiSenderRegex = RegExp(
+    r'(?:^|[-_])sbiupi$|\b(?:vm|vk|vd|bz)-sbiupi\b|\bsbiupi\b',
+    caseSensitive: false,
+  );
+
+  final Map<String, String> _sessionCache = {};
+
+  double? _extractAmount(String body) {
+    for (final regex in _amountRegexes) {
+      final match = regex.firstMatch(body);
+      if (match == null) continue;
+      final value = match.group(1)?.replaceAll(',', '');
+      if (value == null) continue;
+      final parsed = double.tryParse(value);
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
+  }
 
   FinanceModel? _parseFinancialSms(SmsMessage sms) {
     final body = sms.body ?? '';
     final bodyLower = body.toLowerCase();
+    final sender = sms.sender ?? 'Unknown';
+    final senderLower = sender.toLowerCase();
 
-    final amountMatch = _amountRegex.firstMatch(body);
-    if (amountMatch == null) return null;
-
-    final amountStr = amountMatch.group(1)!.replaceAll(',', '');
-    final amount = double.tryParse(amountStr);
+    final amount = _extractAmount(body);
     if (amount == null || amount <= 0) return null;
 
     final isDebit = _debitKeywords.any((k) => bodyLower.contains(k));
     final isCredit = _creditKeywords.any((k) => bodyLower.contains(k));
-    if (!isDebit && !isCredit) return null;
+    final isUpiSender = _upiSenderRegex.hasMatch(senderLower);
+    final hasTxnContext = PaymentCategories.transactionContextKeywords
+        .any((k) => bodyLower.contains(k));
+
+    if (!isDebit && !isCredit && !(isUpiSender && hasTxnContext)) return null;
+
+    final effectiveIsDebit = isDebit || (!isCredit && isUpiSender);
+    final categoryMatch = _inferCategory(bodyLower, effectiveIsDebit);
+
+    String? transactionKeyword;
+    final hints = effectiveIsDebit
+        ? PaymentCategories.debitKeywordHints
+        : PaymentCategories.creditKeywordHints;
+    final found = hints.firstWhere((k) => bodyLower.contains(k), orElse: () => '');
+    if (found.isNotEmpty) transactionKeyword = found;
 
     return FinanceModel(
-      category: _inferCategory(bodyLower, isDebit),
+      smsId: sms.id ?? DateTime.now().millisecondsSinceEpoch,
+      category: categoryMatch.category,
       date: sms.date ?? DateTime.now(),
       amount: amount,
-      application: sms.sender ?? 'Unknown',
+      application: sender,
+      triggerKeyword: categoryMatch.triggerKeyword ?? transactionKeyword,
+      body: body,
     );
   }
 
-  String _inferCategory(String body, bool isDebit) {
-    if (!isDebit) return 'Credit';
-    final bodyLower = body.toLowerCase();
+  _CategoryMatch _inferCategory(String bodyLower, bool isDebit) {
+    if (!isDebit) return const _CategoryMatch(PaymentCategories.creditCategory, null);
 
-    final Map<String, String> merchantCategoryCache = {};
-
-    for (var merchant in merchantCategoryCache.keys) {
-      if (bodyLower.contains(merchant)) {
-        return merchantCategoryCache[merchant]!;
+    for (final entry in _sessionCache.entries) {
+      if (bodyLower.contains(entry.key)) {
+        return _CategoryMatch(entry.value, entry.key);
       }
     }
 
-    for (var entry in PaymentCategories.vpaIdentifiers.entries) {
-      for (var id in entry.value) {
+    for (final entry in PaymentCategories.vpaIdentifiers.entries) {
+      for (final id in entry.value) {
         if (bodyLower.contains(id)) {
-          merchantCategoryCache[id] = entry.key; 
-          return entry.key;
+          _sessionCache[id] = entry.key;
+          return _CategoryMatch(entry.key, id);
         }
       }
     }
 
-    for (var entry in PaymentCategories.keywords.entries) {
-      for (var keyword in entry.value) {
+    for (final entry in PaymentCategories.keywords.entries) {
+      for (final keyword in entry.value) {
         if (bodyLower.contains(keyword)) {
-          merchantCategoryCache[keyword] = entry.key;
-          return entry.key;
+          _sessionCache[keyword] = entry.key;
+          return _CategoryMatch(entry.key, keyword);
         }
       }
     }
 
-    return PaymentCategories.uncategorized;
+    return const _CategoryMatch(PaymentCategories.uncategorized, null);
   }
 }
 
-final financeControllerProvider =
-    ChangeNotifierProvider<FinanceController>((ref) => FinanceController());
+class _CategoryMatch {
+  const _CategoryMatch(this.category, this.triggerKeyword);
+  final String category;
+  final String? triggerKeyword;
+}
