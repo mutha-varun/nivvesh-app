@@ -288,26 +288,25 @@ class _OTPBottomSheetState extends ConsumerState<OTPBottomSheet> {
   }
 
   Future<void> _submitOtp() async {
-    if (_otpController.text.length != 6) {
-      _showError('Enter a valid 6-digit OTP');
-      return;
-    }
-
-    await ref
-        .read(signInScreenControllerProvider.notifier)
-        .verifyOtp(widget.phoneNumber, _otpController.text.trim());
-
-    final authRequestState = ref.read(signInScreenControllerProvider);
-    if (!mounted) return;
-
-    if (authRequestState.hasError) {
-      _showError('OTP Verification Failed');
-      return;
-    }
-
-    Navigator.of(context).pop();
-    context.go('/home');
+  if (_otpController.text.length != 6) {
+    _showError('Enter a valid 6-digit OTP');
+    return;
   }
+
+  await ref
+      .read(signInScreenControllerProvider.notifier)
+      .verifyOtp(widget.phoneNumber, _otpController.text.trim());
+
+  final authRequestState = ref.read(signInScreenControllerProvider);
+  if (!mounted) return;
+
+  if (authRequestState.hasError) {
+    _showError('OTP Verification Failed');
+    return;
+  }
+
+  if (mounted) Navigator.of(context).pop(); 
+}
 
   void _showError(String message) {
     showTopSnackBar(

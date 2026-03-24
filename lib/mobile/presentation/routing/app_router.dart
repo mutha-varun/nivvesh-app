@@ -14,6 +14,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     navigatorKey: _rootNavigatorKey,
+    refreshListenable: _RouterNotifier(ref),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = ref.read(authStateProvider);
       final isLoading = authState.isLoading;
@@ -25,7 +26,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isOnSplash = state.matchedLocation == '/splash';
 
       if (isLoading) {
-        return isOnSplash ? null : '/splash';
+        return isOnSplash ? '/login' : null;
       }
 
       if (!isLoggedIn) {
@@ -83,5 +84,11 @@ class _SplashScreen extends StatelessWidget {
     return const Scaffold(
       body: Center(child: CircularProgressIndicator()),
     );
+  }
+}
+
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(Ref ref) {
+    ref.listen(authStateProvider, (_, __) => notifyListeners());
   }
 }

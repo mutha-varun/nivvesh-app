@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:nivvesh/mobile/domain/models/finance_model.dart';
-import 'package:nivvesh/mobile/presentation/auth/pages/login_page.dart';
-import 'package:nivvesh/mobile/presentation/spend/pages/spend_page.dart';
+import 'package:nivvesh/mobile/presentation/routing/app_router.dart';
 import 'package:nivvesh/mobile/presentation/spend/spend_provider.dart';
 import 'package:path_provider/path_provider.dart';
 // import 'package:nivvesh/banks/screens/bank_webview.dart';
@@ -25,21 +24,21 @@ Future<void> main() async {
   // Wait until first frame is rendered to remove splash
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+
+    return MaterialApp.router(
       title: 'Nivvesh',
       // theme: AppTheme.lightTheme,
       // darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
-      // initialRoute: RouteGenerator.homeScreen,
-      // onGenerateRoute: RouteGenerator.generateRoute,
-      home: LoginPage(),
+      routerConfig: router,
       // WebViewScreen(
       //   url: 'https://nivvesh.fixerra.in',
       //   title: '',
