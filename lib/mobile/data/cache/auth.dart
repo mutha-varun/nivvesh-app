@@ -1,32 +1,52 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthLocalDataSource {
-  final SharedPreferences sharedPreferences;
+  AuthLocalDataSource(this._storage);
+  
+  final FlutterSecureStorage _storage;
+  static const _refreshTokenKey = 'refreshToken';
+  static const _accessTokenKey = 'accessToken';
+  static const _phoneNumberKey = 'phoneNumber';
 
-  AuthLocalDataSource({required this.sharedPreferences});
-
-  static const String _phoneNumberKey = 'phoneNumber';
-  static const String _loginTimestampKey = 'loginTimestamp';
-
-  Future<void> cachePhoneNumber(String phone) async {
-    await sharedPreferences.setString(_phoneNumberKey, phone);
+  Future<void> saveAuthToken(String accessToken, String refreshToken) async {
+    await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    await _storage.write(key: _accessTokenKey, value: accessToken);
   }
 
-  Future<void> cacheLoginTimestamp() async {
-    await sharedPreferences.setString(
-      _loginTimestampKey,
-      DateTime.now().toIso8601String(),
-    );
+  Future<void> updateAccessToken(String accessToken) async {
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+  }
+
+  Future<String?> getAccessToken() async {
+    return await _storage.read(key: _accessTokenKey);
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+
+  Future<void> deleteAccessToken() async {
+    await _storage.delete(key: _accessTokenKey);
+  }
+
+  Future<void> deleteRefreshtoken() async {
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  Future<void> deleteAllTokens() async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  Future<void> savePhoneNumber(String phoneNumber) async {
+    await _storage.write(key: _phoneNumberKey, value: phoneNumber);
   }
 
   Future<String?> getPhoneNumber() async {
-    return sharedPreferences.getString(_phoneNumberKey);
+    return await _storage.read(key: _phoneNumberKey);
   }
 
-  Future<void> clearCache() async {
-    await Future.wait([
-      sharedPreferences.remove(_phoneNumberKey),
-      sharedPreferences.remove(_loginTimestampKey),
-    ]);
+  Future<void> deletePhoneNumber() async {
+    await _storage.delete(key: _phoneNumberKey);
   }
 }

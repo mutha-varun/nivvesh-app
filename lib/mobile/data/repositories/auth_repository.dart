@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:nivvesh/mobile/data/api/auth_api.dart';
+import 'package:nivvesh/mobile/data/api/http_client_interceptor.dart';
 import 'package:nivvesh/mobile/data/cache/auth.dart';
 import 'package:nivvesh/mobile/data/repositories/api_response_handler.dart';
 import 'package:nivvesh/mobile/domain/models/requests/login_model.dart';
@@ -16,7 +16,7 @@ class AuthRepository {
   });
 
   final AuthLocalDataSource localDataSource;
-  final http.Client httpClient;
+  final HttpClientInterceptor httpClient;
   final AuthApi api;
 
   /// Sends OTP to the provided phone number
@@ -37,9 +37,6 @@ class AuthRepository {
     if (response.statusCode != 200) {
       return ApiResponseHandler.handleErrorResponse(response);
     }
-
-    await localDataSource.cachePhoneNumber(formattedPhone);
-    await localDataSource.cacheLoginTimestamp();
 
     return formattedPhone;
   });
@@ -62,6 +59,20 @@ class AuthRepository {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+
+      final nestedData = jsonResponse['data'];
+      final accessToken = nestedData is Map<String, dynamic>
+          ? nestedData['accessToken'] as String?
+          : (jsonResponse['accessToken'] as String? ?? response.headers['authorization']);
+        final refreshToken = response.headers['refresh-token'] ?? response.headers['Refresh-Token'];
+
+      if (accessToken != null && refreshToken != null) {
+        await localDataSource.saveAuthToken(accessToken, refreshToken);
+        await localDataSource.savePhoneNumber(phone);
+      } else {
+        throw AppException('Authentication tokens were not provided in the response.');
+      }
+
       return OtpResponseData.fromJson(jsonResponse);
     } else {
       return ApiResponseHandler.handleErrorResponse(response);
