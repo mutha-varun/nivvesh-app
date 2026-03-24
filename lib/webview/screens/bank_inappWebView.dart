@@ -16,8 +16,6 @@ class InAppWebViewScreen extends StatefulWidget {
 }
 
 class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
-  InAppWebViewController? _webViewController;
-
   @override
   void initState() {
     super.initState();
@@ -107,9 +105,7 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
               useOnDownloadStart: true,
               useShouldOverrideUrlLoading: true,
             ),
-            onWebViewCreated: (controller) {
-              _webViewController = controller;
-            },
+            onWebViewCreated: (_) {},
             onLoadStart: (controller, uri) {
               // no progress UI
             },

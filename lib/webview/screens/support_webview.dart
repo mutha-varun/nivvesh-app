@@ -15,7 +15,6 @@ class SupportWebView extends StatefulWidget {
 }
 
 class SupportWebViewState extends State<SupportWebView> {
-  InAppWebViewController? _controller;
   double _progress = 0.0;
 
   @override
@@ -60,9 +59,7 @@ class SupportWebViewState extends State<SupportWebView> {
                   allowsInlineMediaPlayback: true,
                   useShouldOverrideUrlLoading: true,
                 ),
-                onWebViewCreated: (controller) {
-                  _controller = controller;
-                },
+                onWebViewCreated: (_) {},
                 onLoadStart: (controller, uri) {
                   setState(() => _progress = 0.05);
                 },

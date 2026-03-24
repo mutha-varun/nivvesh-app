@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar/isar.dart';
+import 'package:nivvesh/mobile/domain/models/finance_model.dart';
+import 'package:nivvesh/mobile/presentation/auth/pages/login_page.dart';
+import 'package:nivvesh/mobile/presentation/spend/pages/spend_page.dart';
+import 'package:nivvesh/mobile/presentation/spend/spend_provider.dart';
+import 'package:path_provider/path_provider.dart';
 // import 'package:nivvesh/banks/screens/bank_webview.dart';
-import 'package:nivvesh/startup_page.dart';
 
 Future<void> main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsFlutterBinding.ensureInitialized();
+  final directory = await getApplicationDocumentsDirectory();
+  final isar = Isar.instanceNames.isEmpty
+      ? await Isar.open([FinanceModelSchema], directory: directory.path)
+      : Isar.getInstance()!;
+  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   // await setupServiceLocator();
-  runApp(const MyApp());
+  runApp(
+    ProviderScope(
+      overrides: [isarProvider.overrideWithValue(isar)],
+      child: const MyApp(),
+    ),
+  );
   // Wait until first frame is rendered to remove splash
 }
 
@@ -25,7 +39,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       // initialRoute: RouteGenerator.homeScreen,
       // onGenerateRoute: RouteGenerator.generateRoute,
-      home: StartupPage(),
+      home: LoginPage(),
       // WebViewScreen(
       //   url: 'https://nivvesh.fixerra.in',
       //   title: '',

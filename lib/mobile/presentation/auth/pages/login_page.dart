@@ -1,24 +1,25 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nivvesh/mobile/presentation/auth/controllers/auth_controller.dart';
 import 'package:nivvesh/webview/screens/support_webview.dart';
 import 'package:pinput/pinput.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
-import 'api_service.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _phoneController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,25 +27,24 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _startLogin() async {
+  Future<void> _startLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
 
-    final phone = "+91${_phoneController.text}";
-    final success = await ApiService.sendOtp(phone);
+    final phoneDigits = _phoneController.text.trim();
+    await ref.read(signInScreenControllerProvider.notifier).sendOtp(phoneDigits);
 
-    setState(() => _isLoading = false);
+    final authRequestState = ref.read(signInScreenControllerProvider);
+    if (!mounted) return;
 
-    if (success) {
-      _showOtpBottomSheet(phone);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send OTP')),
-      );
+    if (authRequestState.hasError) {
+      _showError('Failed to send OTP');
+      return;
     }
+
+    _showOtpBottomSheet('+91$phoneDigits');
   }
 
-  void _showOtpBottomSheet(String phone) {
+  void _showOtpBottomSheet(String phoneWithCountryCode) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -52,60 +52,71 @@ class _LoginPageState extends State<LoginPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => OTPBottomSheet(phoneNumber: phone),
+      builder: (_) => OTPBottomSheet(phoneNumber: phoneWithCountryCode),
+    );
+  }
+
+  void _showError(String message) {
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.error(message: message),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authRequestState = ref.watch(signInScreenControllerProvider);
+    final isLoading = authRequestState.isLoading;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xff1c1c1e),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Align(
-                    alignment: Alignment.topRight,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SupportWebView(
-                                  url: 'https://nivvesh.fixerra.in/support',
-                                  title: ''),
-                            ),
-                            (route) => route.isFirst);
-                      },
-                      child: Container(
-                          margin: const EdgeInsets.only(top: 20),
-                          height: 25,
-                          width: 25,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(color: Colors.white)),
-                          padding: const EdgeInsets.all(2),
-                          child: const Center(
-                              child: Icon(
-                            Icons.live_help_outlined,
-                            color: Colors.white,
-                            size: 15,
-                          ))),
-                    )),
-                const SizedBox(height: 40),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.asset(
-                      'assets/nivvesh_logo.png',
-                      height: 80,
-                      fit: BoxFit.cover,
+                  alignment: Alignment.topRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SupportWebView(
+                            url: 'https://nivvesh.fixerra.in/support',
+                            title: '',
+                          ),
+                        ),
+                        (route) => route.isFirst,
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 20),
+                      height: 25,
+                      width: 25,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.white),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: const Center(
+                        child: Icon(
+                          Icons.live_help_outlined,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                      ),
                     ),
-                  ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Image.asset(
+                  'assets/nivvesh_logo.png',
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
                 const SizedBox(height: 60),
                 const Text(
@@ -191,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? () {} : _startLogin,
+                    onPressed: isLoading ? null : _startLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFf8ec80),
                       foregroundColor: Colors.black,
@@ -200,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -211,9 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                           )
                         : const Text(
                             'Get Started',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
@@ -226,20 +235,19 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class OTPBottomSheet extends StatefulWidget {
+class OTPBottomSheet extends ConsumerStatefulWidget {
   final String phoneNumber;
+
   const OTPBottomSheet({super.key, required this.phoneNumber});
 
   @override
-  State<OTPBottomSheet> createState() => _OTPBottomSheetState();
+  ConsumerState<OTPBottomSheet> createState() => _OTPBottomSheetState();
 }
 
-class _OTPBottomSheetState extends State<OTPBottomSheet> {
+class _OTPBottomSheetState extends ConsumerState<OTPBottomSheet> {
   final TextEditingController _otpController = TextEditingController();
-  bool _isSubmitting = false;
   int _resendSeconds = 60;
   Timer? _timer;
-  bool _canResend = false;
 
   @override
   void initState() {
@@ -250,11 +258,9 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
   void _startTimer() {
     setState(() {
       _resendSeconds = 60;
-      _canResend = false;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendSeconds == 0) {
-        setState(() => _canResend = true);
         timer.cancel();
       } else {
         setState(() => _resendSeconds--);
@@ -262,59 +268,52 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
     });
   }
 
-  void _resendOtp() async {
-    final success = await ApiService.sendOtp(widget.phoneNumber);
-    if (success) {
-      showTopSnackBar(
-        Overlay.of(context),
-        const CustomSnackBar.success(message: 'OTP resent successfully!'),
-      );
-      _startTimer(); // restart countdown
-    } else {
-      showTopSnackBar(
-        Overlay.of(context),
-        const CustomSnackBar.error(message: 'Failed to resend OTP'),
-      );
-    }
-  }
+  Future<void> _resendOtp() async {
+    final phoneDigits = widget.phoneNumber.replaceFirst('+91', '');
+    await ref.read(signInScreenControllerProvider.notifier).sendOtp(phoneDigits);
 
-  void _submitOtp() async {
-    if (_otpController.text.length != 6) {
-      showTopSnackBar(
-        Overlay.of(context),
-        const CustomSnackBar.error(message: 'Enter a valid 6-digit OTP'),
-      );
+    final authRequestState = ref.read(signInScreenControllerProvider);
+    if (!mounted) return;
+
+    if (authRequestState.hasError) {
+      _showError('Failed to resend OTP');
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    showTopSnackBar(
+      Overlay.of(context),
+      const CustomSnackBar.success(message: 'OTP resent successfully!'),
+    );
+    _startTimer();
+  }
 
-    final result =
-        await ApiService.verifyOtp(widget.phoneNumber, _otpController.text);
-
-    setState(() => _isSubmitting = false);
-
-    if (result != null) {
-      Navigator.of(context).pop();
-      // showTopSnackBar(
-      //   Overlay.of(context),
-      //   CustomSnackBar.success(message: result.message),
-      // );
-      if (result.redirectUrl.isNotEmpty) {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  InAppWebViewScreen(url: result.redirectUrl, title: ''),
-            ),
-            (route) => false);
-      }
-    } else {
-      showTopSnackBar(
-        Overlay.of(context),
-        const CustomSnackBar.error(message: 'OTP Verification Failed'),
-      );
+  Future<void> _submitOtp() async {
+    if (_otpController.text.length != 6) {
+      _showError('Enter a valid 6-digit OTP');
+      return;
     }
+
+    await ref
+        .read(signInScreenControllerProvider.notifier)
+        .verifyOtp(widget.phoneNumber, _otpController.text.trim());
+
+    final authRequestState = ref.read(signInScreenControllerProvider);
+    if (!mounted) return;
+
+    if (authRequestState.hasError) {
+      _showError('OTP Verification Failed');
+      return;
+    }
+
+    Navigator.of(context).pop();
+    context.go('/home');
+  }
+
+  void _showError(String message) {
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.error(message: message),
+    );
   }
 
   @override
@@ -326,6 +325,9 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final authRequestState = ref.watch(signInScreenControllerProvider);
+    final isSubmitting = authRequestState.isLoading;
+
     return AnimatedPadding(
       padding: MediaQuery.of(context).viewInsets,
       duration: const Duration(milliseconds: 100),
@@ -340,8 +342,10 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
               children: [
                 const Icon(Icons.phone_outlined, color: Colors.grey, size: 18),
                 const SizedBox(width: 8),
-                const Text('VERIFY MOBILE NUMBER',
-                    style: TextStyle(color: Color(0xffccccd5))),
+                const Text(
+                  'VERIFY MOBILE NUMBER',
+                  style: TextStyle(color: Color(0xffccccd5)),
+                ),
                 const Spacer(),
                 InkWell(
                   onTap: () => Navigator.pop(context),
@@ -349,13 +353,14 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
                     height: 20,
                     width: 20,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.grey),
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.grey,
+                    ),
                     child: const Center(
-                        child: Icon(Icons.close,
-                            color: Color(0xffccccd5), size: 15)),
+                      child: Icon(Icons.close, color: Color(0xffccccd5), size: 15),
+                    ),
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -404,7 +409,7 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
             ),
             const SizedBox(height: 30),
             LinearProgressIndicator(
-              value: (_resendSeconds / 60),
+              value: _resendSeconds / 60,
               color: Colors.greenAccent,
               backgroundColor: Colors.grey.shade800,
             ),
@@ -421,16 +426,11 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
                       style: TextStyle(color: Color(0xffccccd5)),
                     ),
                   ),
-
-            // Text(
-            //   'Resend Code in 00:${_resendSeconds.toString().padLeft(2, '0')}',
-            //   style: const TextStyle(color: Colors.white),
-            // ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isSubmitting ? () {} : _submitOtp,
+                onPressed: isSubmitting ? null : _submitOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFf8ec80),
                   foregroundColor: Colors.black,
@@ -439,7 +439,7 @@ class _OTPBottomSheetState extends State<OTPBottomSheet> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isSubmitting
+                child: isSubmitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,
