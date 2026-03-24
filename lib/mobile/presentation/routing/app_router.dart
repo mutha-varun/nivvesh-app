@@ -21,7 +21,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.asData?.value ?? false;
 
       final isGoingToLogin = state.matchedLocation == '/login';
-      final isGoingToHome = state.matchedLocation == '/home';
 
       final isOnSplash = state.matchedLocation == '/splash';
 
@@ -38,9 +37,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return '/home';
       }
 
-      if (isGoingToHome) return null;
-
-      return '/home';
+      return null;
     },
     routes: [
       GoRoute(
