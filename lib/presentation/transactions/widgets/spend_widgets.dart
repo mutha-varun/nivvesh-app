@@ -112,7 +112,7 @@ class SummaryBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'TOTAL MONTHLY SPEND',
+                'TOTAL SPEND',
                 style: TextStyle(
                   color: _luxMuted,
                   fontSize: 10,
@@ -580,44 +580,41 @@ class EmptyState extends StatelessWidget {
 class FilterToolbar extends ConsumerWidget {
   const FilterToolbar({super.key});
 
-  static const _months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+  static const _monthAbbr = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
+
+  static String _fmtShort(DateTime d) =>
+      '${d.day} ${_monthAbbr[d.month - 1]}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(filterProvider);
+
+    if (!filter.hasAnyNonDefault) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
     final chips = <Widget>[];
 
-    chips.add(_ReadOnlyChip(
-      icon: Icons.calendar_today_rounded,
-      label: 'Year ${filter.selectedYear}',
-    ));
-
-    if (filter.selectedMonth != null) {
+    if (filter.hasNonDefaultDateRange) {
+      final from = _fmtShort(filter.dateFrom);
+      final to = _fmtShort(filter.dateTo);
       chips.add(_ReadOnlyChip(
         icon: Icons.date_range_rounded,
-        label: _months[filter.selectedMonth! - 1],
+        label: '$from - $to',
       ));
     }
 
-    chips.add(_ReadOnlyChip(
-      icon: Icons.view_list_rounded,
-      label: filter.grouping == GroupingType.category
-          ? 'Category View'
-          : 'Summary View',
-    ));
+    if (filter.hasNonDefaultGrouping) {
+      chips.add(_ReadOnlyChip(
+        icon: Icons.view_list_rounded,
+        label: filter.grouping == GroupingType.category
+            ? 'Category View'
+            : 'Summary View',
+      ));
+    }
 
     if (filter.grouping == GroupingType.period) {
       chips.add(_ReadOnlyChip(
@@ -626,7 +623,7 @@ class FilterToolbar extends ConsumerWidget {
       ));
     }
 
-    if (filter.selectedCategories.isNotEmpty) {
+    if (filter.hasCategories) {
       chips.add(_ReadOnlyChip(
         icon: Icons.category_rounded,
         label: '${filter.selectedCategories.length} categories',
@@ -672,26 +669,17 @@ class TopFilterSheet extends ConsumerWidget {
     PaymentCategories.uncategorized,
   ];
 
-  static const _months = [
-    'All Months',
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+  static const _monthAbbr = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
+
+  static String _fmtDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')} ${_monthAbbr[d.month - 1]} ${d.year}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(filterProvider);
-    final selectedMonth = filter.selectedMonth ?? 0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
@@ -719,31 +707,46 @@ class TopFilterSheet extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              _SheetDropdown<int>(
-                label: 'Year',
-                value: filter.selectedYear,
-                items: List.generate(6, (i) => DateTime.now().year - i),
-                itemLabel: (v) => '$v',
-                onChanged: (value) {
-                  if (value == null) return;
-                  ref.read(filterProvider.notifier).state =
-                      filter.copyWith(year: value);
-                },
+              Text(
+                'Date Range',
+                style: TextStyle(
+                  color: _luxMuted,
+                  fontSize: 12,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 10),
-              _SheetDropdown<int>(
-                label: 'Month',
-                value: selectedMonth,
-                items: List.generate(13, (i) => i),
-                itemLabel: (v) => _months[v],
-                onChanged: (value) {
-                  if (value == null) return;
-                  ref.read(filterProvider.notifier).state = filter.copyWith(
-                    month: value == 0 ? -1 : value,
-                  );
-                },
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () => _pickRange(context, ref, filter),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: _luxGold.withValues(alpha: 0.26)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.date_range_rounded,
+                          color: _luxGold, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${_fmtDate(filter.dateFrom)}  —  ${_fmtDate(filter.dateTo)}',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                      Icon(Icons.edit_calendar_rounded,
+                          color: _luxMuted, size: 18),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               _SheetDropdown<GroupingType>(
                 label: 'View Mode',
                 value: filter.grouping,
@@ -813,9 +816,9 @@ class TopFilterSheet extends ConsumerWidget {
                     child: OutlinedButton(
                       onPressed: () {
                         ref.read(filterProvider.notifier).state =
-                            filter.copyWith(selectedCategories: {});
+                            defaultFilter();
                       },
-                      child: const Text('Clear Categories'),
+                      child: const Text('Reset All'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -832,6 +835,37 @@ class TopFilterSheet extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _pickRange(
+      BuildContext context, WidgetRef ref, FinanceFilterState filter) async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange:
+          DateTimeRange(start: filter.dateFrom, end: filter.dateTo),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: _luxGold,
+              onPrimary: Colors.black,
+              surface: AppColors.dark.cardSurface,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      ref.read(filterProvider.notifier).state = filter.copyWith(
+        dateFrom: picked.start,
+        dateTo: DateTime(
+            picked.end.year, picked.end.month, picked.end.day, 23, 59, 59),
+      );
+    }
   }
 }
 

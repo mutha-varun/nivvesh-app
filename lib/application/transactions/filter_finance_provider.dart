@@ -34,12 +34,11 @@ final filteredFinanceProvider = Provider<FilteredFinanceResult>((ref) {
   final filter = ref.watch(filterProvider);
 
   final filtered = allMessages.where((m) {
-    final yearMatch = m.date.year == filter.selectedYear;
-    final monthMatch =
-        filter.selectedMonth == null || m.date.month == filter.selectedMonth;
+    final dateMatch =
+        !m.date.isBefore(filter.dateFrom) && !m.date.isAfter(filter.dateTo);
     final categoryMatch = filter.selectedCategories.isEmpty ||
         filter.selectedCategories.contains(m.category);
-    return yearMatch && monthMatch && categoryMatch;
+    return dateMatch && categoryMatch;
   }).toList()
     ..sort((a, b) => b.date.compareTo(a.date));
 
