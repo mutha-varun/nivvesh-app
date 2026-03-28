@@ -22,7 +22,7 @@ abstract class AppColorsBase {
 }
 
 class DarkAppColors extends AppColorsBase {
-  @override Color get background          => const Color(0xFF1C1B1F);
+  @override Color get background          => const Color(0xFF000000);
   @override Color get surface             => const Color(0xFF1C1B1F);
   @override Color get surfaceContainerLow => const Color(0xFF211F26);
   @override Color get surfaceContainerHigh=> const Color(0xFF2B2930);
@@ -64,6 +64,12 @@ class LightAppColors extends AppColorsBase {
 }
 
 class AppColors {
+  static const Color luxGold = Color(0xFFD4AF37);
+  static const Color luxSoftGold = Color(0xFFF1D592);
+  static const Color luxBg = Color(0xFF000000);
+  static const Color luxSurface = Color(0xFF0A0A0A);
+  static const Color luxMuted = Color(0xFF8E8E93);
+
   static AppColorsBase of(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     return brightness == Brightness.dark ? DarkAppColors() : LightAppColors();

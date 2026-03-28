@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart' hide AppBar;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nivvesh/mobile/core/constants/payment_category.dart';
-import 'package:nivvesh/mobile/domain/models/finance_model.dart';
-import 'package:nivvesh/mobile/presentation/shared/themes/colors.dart';
+import 'package:nivvesh/mobile/presentation/spend/filter_provider.dart';
 import 'package:nivvesh/mobile/presentation/spend/spend_provider.dart';
+import 'package:nivvesh/mobile/presentation/spend/widget/filtered_provider.dart';
 import 'package:nivvesh/mobile/presentation/spend/widget/spend_widgets.dart';
 
 class FinanceSheet extends ConsumerWidget {
   const FinanceSheet({super.key});
+  static const _luxBg = Color(0xFF000000);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ctrl = ref.watch(financeControllerProvider);
-    final c = AppColors.of(context);
-
+    final filtered = ref.watch(filteredFinanceProvider);
+    final filterState = ref.watch(filterProvider);
     return Scaffold(
-      backgroundColor: c.background,
+      backgroundColor: _luxBg,
       body: CustomScrollView(
         slivers: [
-          AppBar(onRefresh: ctrl.fetchMessages, isLoading: ctrl.isLoading),
+          AppBar(
+            onRefresh: ctrl.fetchMessages,
+            isLoading: ctrl.isLoading,
+            onFilterTap: () => _openTopFilters(context),
+          ),
           if (ctrl.isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
@@ -30,27 +34,26 @@ class FinanceSheet extends ConsumerWidget {
           else if (ctrl.messages.isEmpty)
             const SliverFillRemaining(child: EmptyState())
           else ...[
-            SummaryBar(messages: ctrl.messages),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              sliver: SliverList.separated(
-                itemCount: ctrl.messages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (ctx, i) => TransactionCard(ctrl.messages[i]),
-              ),
-            ),
+            SummaryBar(messages: filtered.filteredTransactions),
+            const FilterToolbar(),
+            if (filtered.filteredTransactions.isEmpty)
+              const SliverFillRemaining(child: EmptyState())
+            else if (filterState.grouping == GroupingType.category)
+              CategoryGroupsSliver(groups: filtered.categoryGroups)
+            else
+              PeriodSummarySliver(aggregates: filtered.periodAggregates),
           ],
         ],
       ),
-      floatingActionButton: ctrl.isLoading
-          ? null
-          : FloatingActionButton.extended(
-              backgroundColor: AppColors.of(context).onAccentContainer,
-              foregroundColor: AppColors.of(context).accentText,
-              onPressed: ctrl.fetchMessages,
-              icon: const Icon(Icons.sync_rounded),
-              label: const Text('Sync'),
-            ),
+    );
+  }
+
+  void _openTopFilters(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const TopFilterSheet(),
     );
   }
 }
