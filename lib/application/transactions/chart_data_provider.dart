@@ -5,7 +5,7 @@ import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 
-enum ChartMode { total, byCategory }
+enum ChartMode { total, byCategory, savings }
 
 enum ChartResolution { daily, weekly, monthly }
 
@@ -21,12 +21,17 @@ class SpendChartData {
   final List<DateTime> bucketDates;
   final List<double> totalSeries;
   final Map<String, List<double>> categorySeries;
+  // received - spent per month (always monthly, regardless of main resolution)
+  final List<DateTime> savingsMonthlyDates;
+  final List<double> savingsSeries;
 
   const SpendChartData({
     required this.resolution,
     required this.bucketDates,
     required this.totalSeries,
     required this.categorySeries,
+    required this.savingsMonthlyDates,
+    required this.savingsSeries,
   });
 }
 
@@ -54,6 +59,7 @@ SpendChartData buildChartData(
   }
 
   final totalSeries = List<double>.filled(bucketDates.length, 0);
+  final creditSeries = List<double>.filled(bucketDates.length, 0);
 
   final categories = <String>{};
   for (final t in transactions) {
@@ -68,20 +74,47 @@ SpendChartData buildChartData(
   }
 
   for (final t in transactions) {
-    if (t.category == PaymentCategories.creditCategory) continue;
     final key = _bucketKey(_bucketStart(t.date, resolution));
     final idx = keyToIndex[key];
-    if (idx != null) {
+    if (idx == null) continue;
+    if (t.category == PaymentCategories.creditCategory) {
+      creditSeries[idx] += t.amount;
+    } else {
       totalSeries[idx] += t.amount;
       categorySeries[t.category]?[idx] += t.amount;
     }
   }
+
+  // savings — always monthly regardless of main resolution
+  final savingsMonthlyDates = _generateBuckets(from, to, ChartResolution.monthly);
+  final savingsKeyToIndex = <String, int>{};
+  for (int i = 0; i < savingsMonthlyDates.length; i++) {
+    savingsKeyToIndex[_bucketKey(savingsMonthlyDates[i])] = i;
+  }
+  final monthlySpent = List<double>.filled(savingsMonthlyDates.length, 0);
+  final monthlyCredit = List<double>.filled(savingsMonthlyDates.length, 0);
+  for (final t in transactions) {
+    final key = _bucketKey(DateTime(t.date.year, t.date.month));
+    final idx = savingsKeyToIndex[key];
+    if (idx == null) continue;
+    if (t.category == PaymentCategories.creditCategory) {
+      monthlyCredit[idx] += t.amount;
+    } else {
+      monthlySpent[idx] += t.amount;
+    }
+  }
+  final savingsSeries = List<double>.generate(
+    savingsMonthlyDates.length,
+    (i) => monthlyCredit[i] - monthlySpent[i],
+  );
 
   return SpendChartData(
     resolution: resolution,
     bucketDates: bucketDates,
     totalSeries: totalSeries,
     categorySeries: categorySeries,
+    savingsMonthlyDates: savingsMonthlyDates,
+    savingsSeries: savingsSeries,
   );
 }
 

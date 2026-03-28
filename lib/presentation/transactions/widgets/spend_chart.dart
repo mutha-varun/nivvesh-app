@@ -67,9 +67,11 @@ class _SpendChartViewState extends State<SpendChartView> {
           const SizedBox(height: 16),
           SizedBox(
             height: 200,
-            child: _mode == ChartMode.total
-                ? _buildTotalChart(data)
-                : _buildCategoryChart(data),
+            child: switch (_mode) {
+              ChartMode.total => _buildTotalChart(data),
+              ChartMode.byCategory => _buildCategoryChart(data),
+              ChartMode.savings => _buildSavingsChart(data),
+            },
           ),
           if (_mode == ChartMode.byCategory &&
               data.categorySeries.isNotEmpty) ...[
@@ -327,6 +329,189 @@ class _SpendChartViewState extends State<SpendChartView> {
         return '${_months[d.month - 1]} ${d.year}';
     }
   }
+
+  Widget _buildSavingsChart(SpendChartData data) {
+    final spots = <FlSpot>[];
+    for (int i = 0; i < data.savingsSeries.length; i++) {
+      spots.add(FlSpot(i.toDouble(), data.savingsSeries[i]));
+    }
+
+    // green when positive (saved), red-ish when negative (overspent)
+    const savingsColor = Color(0xFF4CAF50);
+    const deficitColor = Color(0xFFFF5252);
+
+    // When all values are equal (e.g. single month), add padding so the
+    // point is rendered at mid-height and the y-axis has something to show.
+    final allEqual = spots.every((s) => s.y == spots.first.y);
+    final singleVal = allEqual ? spots.first.y : 0.0;
+    final minY = allEqual ? singleVal - singleVal.abs().clamp(500, double.infinity) : null;
+    final maxY = allEqual ? singleVal + singleVal.abs().clamp(500, double.infinity) : null;
+
+    return LineChart(
+      LineChartData(
+        minY: minY,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: spots.length > 1,
+            curveSmoothness: 0.3,
+            color: savingsColor,
+            barWidth: 1.5,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: spots.length == 1,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 5,
+                color: spot.y >= 0 ? savingsColor : deficitColor,
+                strokeWidth: 2,
+                strokeColor: Colors.black,
+              ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  savingsColor.withValues(alpha: 0.25),
+                  savingsColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+            aboveBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  deficitColor.withValues(alpha: 0.18),
+                  deficitColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ],
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: 0,
+              color: Colors.white.withValues(alpha: 0.18),
+              strokeWidth: 1,
+              dashArray: [5, 4],
+            ),
+          ],
+        ),
+        gridData: _gridData(),
+        titlesData: _savingsTitlesData(data),
+        borderData: FlBorderData(show: false),
+        lineTouchData: _savingsTouchData(data),
+      ),
+    );
+  }
+
+  FlTitlesData _savingsTitlesData(SpendChartData data) {
+    final count = data.savingsMonthlyDates.length;
+    final interval = count <= 6 ? 1 : (count ~/ 5).clamp(1, count);
+    return FlTitlesData(
+      leftTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 46,
+          getTitlesWidget: (value, meta) {
+            if (value == meta.min || value == meta.max) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Text(
+                _fmtAmount(value),
+                style: TextStyle(color: _muted, fontSize: 10),
+              ),
+            );
+          },
+        ),
+      ),
+      bottomTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 28,
+          interval: interval.toDouble(),
+          getTitlesWidget: (value, meta) {
+            final i = value.toInt();
+            if (i < 0 || i >= count) return const SizedBox.shrink();
+            final d = data.savingsMonthlyDates[i];
+            return Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '${_months[d.month - 1]} ${d.year.toString().substring(2)}',
+                style: TextStyle(color: _muted, fontSize: 10),
+              ),
+            );
+          },
+        ),
+      ),
+      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    );
+  }
+
+  LineTouchData _savingsTouchData(SpendChartData data) {
+    return LineTouchData(
+      touchTooltipData: LineTouchTooltipData(
+        fitInsideHorizontally: true,
+        fitInsideVertically: true,
+        tooltipRoundedRadius: 10,
+        tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        getTooltipColor: (_) => const Color(0xFF1A1A1A),
+        getTooltipItems: (touchedSpots) {
+          return touchedSpots.map((spot) {
+            final i = spot.x.toInt();
+            String label = '';
+            if (i >= 0 && i < data.savingsMonthlyDates.length) {
+              final d = data.savingsMonthlyDates[i];
+              label = '${_months[d.month - 1]} ${d.year}\n';
+            }
+            final value = spot.y;
+            final isPositive = value >= 0;
+            return LineTooltipItem(
+              '$label${isPositive ? '+' : ''}₹${_fmtAmount(value.abs())}',
+              TextStyle(
+                color: isPositive
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFFF5252),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            );
+          }).toList();
+        },
+      ),
+      handleBuiltInTouches: true,
+      getTouchedSpotIndicator: (barData, spotIndexes) {
+        return spotIndexes.map((_) {
+          return TouchedSpotIndicatorData(
+            FlLine(
+              color: Colors.white.withValues(alpha: 0.2),
+              strokeWidth: 1,
+              dashArray: [4, 4],
+            ),
+            FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 4,
+                color: spot.y >= 0
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFFF5252),
+                strokeWidth: 2,
+                strokeColor: Colors.black,
+              ),
+            ),
+          );
+        }).toList();
+      },
+    );
+  }
 }
 
 // ── Internal widgets ────────────────────────────────────────────────────────
@@ -353,6 +538,13 @@ class _ModeToggle extends StatelessWidget {
           selected: mode == ChartMode.byCategory,
           color: gold,
           onTap: () => onChanged(ChartMode.byCategory),
+        ),
+        const SizedBox(width: 8),
+        _ToggleItem(
+          label: 'Savings',
+          selected: mode == ChartMode.savings,
+          color: const Color(0xFF4CAF50),
+          onTap: () => onChanged(ChartMode.savings),
         ),
       ],
     );
