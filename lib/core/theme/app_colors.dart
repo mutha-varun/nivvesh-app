@@ -112,7 +112,7 @@ class AppColors {
 
   static AppColorsBase of(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark ? DarkAppColors() : LightAppColors();
+    return brightness == Brightness.dark ? dark : light;
   }
 
   static final dark  = DarkAppColors();

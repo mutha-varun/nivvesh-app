@@ -6,6 +6,8 @@ import 'package:nivvesh/core/router/app_router.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:path_provider/path_provider.dart';
 // import 'package:nivvesh/banks/screens/bank_webview.dart';
+import 'package:nivvesh/core/theme/app_theme.dart';
+import 'package:nivvesh/core/theme/theme_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,15 +36,11 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Nivvesh',
-      // theme: AppTheme.lightTheme,
-      // darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ref.watch(themeModeProvider),
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      // WebViewScreen(
-      //   url: 'https://nivvesh.fixerra.in',
-      //   title: '',
-      // ),
     );
   }
 }

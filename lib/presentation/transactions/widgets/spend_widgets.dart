@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
+import 'package:nivvesh/core/theme/app_theme.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 
@@ -376,11 +377,7 @@ class _DetailSheet extends StatelessWidget {
       maxChildSize: 0.9,
       expand: false,
       builder: (_, sc) => Container(
-        decoration: BoxDecoration(
-          color: _luxSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: _luxGold.withValues(alpha: 0.20)),
-        ),
+        decoration: AppDecorations.luxBottomSheet(radius: 24),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: ListView(
           controller: sc,
@@ -390,10 +387,7 @@ class _DetailSheet extends StatelessWidget {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: AppDecorations.dragHandle,
               ),
             ),
             const SizedBox(height: 20),
@@ -535,10 +529,6 @@ class ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: _luxGold,
-                foregroundColor: Colors.black,
-              ),
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try Again'),
@@ -604,14 +594,28 @@ class FilterToolbar extends ConsumerWidget {
             _ToolbarChip(
               icon: Icons.calendar_today_rounded,
               label: 'Year ${filter.selectedYear}',
-              onTap: () => _showYearSelector(context, ref),
+              onTap: () => _showListSheet<int>(
+                context, ref,
+                items: List.generate(6, (i) => DateTime.now().year - i),
+                label: (y) => '$y',
+                selected: filter.selectedYear,
+                onSelect: (y) => ref.read(filterProvider.notifier).state =
+                    filter.copyWith(year: y),
+              ),
             ),
             _ToolbarChip(
               icon: Icons.date_range_rounded,
               label: filter.selectedMonth == null
                   ? 'All Months'
                   : _monthName(filter.selectedMonth!),
-              onTap: () => _showMonthSelector(context, ref),
+              onTap: () => _showListSheet<int>(
+                context, ref,
+                items: List.generate(13, (i) => i),
+                label: (i) => i == 0 ? 'All Months' : _months[i - 1],
+                selected: filter.selectedMonth ?? 0,
+                onSelect: (v) => ref.read(filterProvider.notifier).state =
+                    filter.copyWith(month: v == 0 ? -1 : v),
+              ),
             ),
             _ToolbarChip(
               icon: Icons.view_list_rounded,
@@ -630,7 +634,14 @@ class FilterToolbar extends ConsumerWidget {
               _ToolbarChip(
                 icon: Icons.timeline_rounded,
                 label: _periodLabel(filter.periodType),
-                onTap: () => _showPeriodSelector(context, ref),
+                onTap: () => _showListSheet<PeriodType>(
+                  context, ref,
+                  items: PeriodType.values,
+                  label: _periodLabel,
+                  selected: filter.periodType,
+                  onSelect: (t) => ref.read(filterProvider.notifier).state =
+                      filter.copyWith(periodType: t),
+                ),
               ),
             _ToolbarChip(
               icon: Icons.category_rounded,
@@ -682,109 +693,33 @@ class FilterToolbar extends ConsumerWidget {
     }
   }
 
-  void _showYearSelector(BuildContext context, WidgetRef ref) {
-    final current = ref.read(filterProvider);
-    final years = List.generate(6, (i) => DateTime.now().year - i);
+  void _showListSheet<T>(
+    BuildContext context,
+    WidgetRef ref, {
+    required List<T> items,
+    required String Function(T) label,
+    required T selected,
+    required void Function(T) onSelect,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: _luxSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+        decoration: AppDecorations.luxBottomSheet(),
         child: ListView(
           shrinkWrap: true,
-          children: years
-              .map(
-                (year) => ListTile(
-                  title: Text('$year', style: const TextStyle(color: Colors.white)),
-                  trailing: current.selectedYear == year
-                      ? Icon(Icons.check_rounded, color: _luxGold)
-                      : null,
-                  onTap: () {
-                    ref.read(filterProvider.notifier).state =
-                        current.copyWith(year: year);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showMonthSelector(BuildContext context, WidgetRef ref) {
-    final current = ref.read(filterProvider);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: _luxSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              title: const Text('All Months', style: TextStyle(color: Colors.white)),
-              trailing: current.selectedMonth == null
-                  ? Icon(Icons.check_rounded, color: _luxGold)
-                  : null,
-              onTap: () {
-                ref.read(filterProvider.notifier).state =
-                    current.copyWith(month: -1);
-                Navigator.pop(ctx);
-              },
-            ),
-            ...List.generate(
-              12,
-              (index) => ListTile(
-                title: Text(_months[index], style: const TextStyle(color: Colors.white)),
-                trailing: current.selectedMonth == index + 1
-                    ? Icon(Icons.check_rounded, color: _luxGold)
-                    : null,
-                onTap: () {
-                  ref.read(filterProvider.notifier).state =
-                      current.copyWith(month: index + 1);
-                  Navigator.pop(ctx);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPeriodSelector(BuildContext context, WidgetRef ref) {
-    final current = ref.read(filterProvider);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: _luxSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: ListView(
-          shrinkWrap: true,
-          children: PeriodType.values
-              .map(
-                (type) => ListTile(
-                  title: Text(_periodLabel(type), style: const TextStyle(color: Colors.white)),
-                  trailing: current.periodType == type
-                      ? Icon(Icons.check_rounded, color: _luxGold)
-                      : null,
-                  onTap: () {
-                    ref.read(filterProvider.notifier).state =
-                        current.copyWith(periodType: type);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              )
+          children: items
+              .map((item) => ListTile(
+                    title: Text(label(item),
+                        style: const TextStyle(color: Colors.white)),
+                    trailing: item == selected
+                        ? Icon(Icons.check_rounded, color: _luxGold)
+                        : null,
+                    onTap: () {
+                      onSelect(item);
+                      Navigator.pop(ctx);
+                    },
+                  ))
               .toList(),
         ),
       ),
@@ -813,10 +748,7 @@ class FilterToolbar extends ConsumerWidget {
         builder: (context, setModalState) {
           final selected = {...current.selectedCategories};
           return Container(
-            decoration: BoxDecoration(
-              color: _luxSurface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
+            decoration: AppDecorations.luxBottomSheet(),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -839,12 +771,6 @@ class FilterToolbar extends ConsumerWidget {
                       return FilterChip(
                         label: Text(category),
                         selected: isSelected,
-                        backgroundColor: _luxSurface,
-                        selectedColor: _luxGold.withValues(alpha: 0.18),
-                        labelStyle: TextStyle(
-                          color: isSelected ? _luxGold : Colors.white,
-                        ),
-                        side: BorderSide(color: _luxGold.withValues(alpha: 0.22)),
                         onSelected: (_) {
                           setModalState(() {
                             if (isSelected) {
@@ -863,10 +789,6 @@ class FilterToolbar extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _luxGold,
-                        foregroundColor: Colors.black,
-                      ),
                       onPressed: () => Navigator.pop(ctx),
                       child: const Text('Done'),
                     ),
@@ -919,10 +841,7 @@ class TopFilterSheet extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-      decoration: BoxDecoration(
-        color: _luxSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      decoration: AppDecorations.luxBottomSheet(radius: 24),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -931,12 +850,9 @@ class TopFilterSheet extends ConsumerWidget {
             children: [
               Center(
                 child: Container(
-                  width: 42,
+                  width: 40,
                   height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  decoration: AppDecorations.dragHandle,
                 ),
               ),
               const SizedBox(height: 14),
@@ -1023,12 +939,6 @@ class TopFilterSheet extends ConsumerWidget {
                   return FilterChip(
                     label: Text(category),
                     selected: isSelected,
-                    backgroundColor: _luxSurface,
-                    selectedColor: _luxGold.withValues(alpha: 0.18),
-                    labelStyle: TextStyle(
-                      color: isSelected ? _luxGold : Colors.white,
-                    ),
-                    side: BorderSide(color: _luxGold.withValues(alpha: 0.22)),
                     onSelected: (_) {
                       final next = {...filter.selectedCategories};
                       if (isSelected) {
@@ -1047,10 +957,6 @@ class TopFilterSheet extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _luxGold.withValues(alpha: 0.35)),
-                        foregroundColor: Colors.white,
-                      ),
                       onPressed: () {
                         ref.read(filterProvider.notifier).state =
                             filter.copyWith(selectedCategories: {});
@@ -1061,10 +967,6 @@ class TopFilterSheet extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _luxGold,
-                        foregroundColor: Colors.black,
-                      ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text('Done'),
                     ),
@@ -1099,11 +1001,11 @@ class _SheetDropdown<T> extends StatelessWidget {
     final theme = Theme.of(context);
     return Theme(
       data: theme.copyWith(
-        canvasColor: const Color(0xFF141414),
+        canvasColor: AppColors.dark.dropdownSurface,
       ),
       child: DropdownButtonFormField<T>(
         initialValue: value,
-        dropdownColor: const Color(0xFF141414),
+        dropdownColor: AppColors.dark.dropdownSurface,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: _luxMuted),
@@ -1274,11 +1176,7 @@ class PeriodSummarySliver extends StatelessWidget {
           final item = aggregates[i];
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: _luxSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-            ),
+            decoration: AppDecorations.luxCard,
             child: Row(
               children: [
                 Expanded(
