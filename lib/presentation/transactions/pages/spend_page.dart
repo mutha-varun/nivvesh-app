@@ -4,6 +4,7 @@ import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_widgets.dart';
+import 'package:nivvesh/presentation/transactions/widgets/spend_chart.dart';
 
 class FinanceSheet extends ConsumerWidget {
   const FinanceSheet({super.key});
@@ -35,6 +36,7 @@ class FinanceSheet extends ConsumerWidget {
             const SliverFillRemaining(child: EmptyState())
           else ...[
             SummaryBar(messages: filtered.filteredTransactions),
+            const SpendChart(),
             const FilterToolbar(),
             if (filtered.filteredTransactions.isEmpty)
               const SliverFillRemaining(child: EmptyState())

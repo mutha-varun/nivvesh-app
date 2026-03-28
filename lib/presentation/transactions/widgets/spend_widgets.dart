@@ -585,8 +585,11 @@ class FilterToolbar extends ConsumerWidget {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
-  static String _fmtShort(DateTime d) =>
-      '${d.day} ${_monthAbbr[d.month - 1]}';
+  static String _fmtShort(DateTime d) {
+    final thisYear = DateTime.now().year;
+    final yearPart = d.year != thisYear ? ' ${d.year}' : '';
+    return '${d.day} ${_monthAbbr[d.month - 1]}$yearPart';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
