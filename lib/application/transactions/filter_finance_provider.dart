@@ -8,12 +8,16 @@ class PeriodAggregate {
   final String sortKey;
   final double total;
   final int count;
+  final DateTime periodStart;
+  final DateTime periodEnd;
 
   const PeriodAggregate({
     required this.label,
     required this.sortKey,
     required this.total,
     required this.count,
+    required this.periodStart,
+    required this.periodEnd,
   });
 }
 
@@ -53,7 +57,10 @@ final filteredFinanceProvider = Provider<FilteredFinanceResult>((ref) {
     final label = _periodLabel(m.date, filter.periodType);
     final bucket = periodAggregatesMap.putIfAbsent(
       key,
-      () => _AggregateBucket(label: label),
+      () => _AggregateBucket(
+        label: label,
+        periodStart: _computePeriodStart(m.date, filter.periodType),
+      ),
     );
     bucket.total += m.amount;
     bucket.count += 1;
@@ -65,6 +72,8 @@ final filteredFinanceProvider = Provider<FilteredFinanceResult>((ref) {
             sortKey: e.key,
             total: e.value.total,
             count: e.value.count,
+            periodStart: e.value.periodStart,
+            periodEnd: _computePeriodEnd(e.value.periodStart, filter.periodType),
           ))
       .toList()
     ..sort((a, b) => b.sortKey.compareTo(a.sortKey));
@@ -90,18 +99,8 @@ String _periodKey(DateTime date, PeriodType type) {
 
 String _periodLabel(DateTime date, PeriodType type) {
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
   switch (type) {
     case PeriodType.weekly:
@@ -114,10 +113,41 @@ String _periodLabel(DateTime date, PeriodType type) {
   }
 }
 
+DateTime _computePeriodStart(DateTime date, PeriodType type) {
+  switch (type) {
+    case PeriodType.weekly:
+      final startDay = ((date.day - 1) ~/ 7) * 7 + 1;
+      return DateTime(date.year, date.month, startDay);
+    case PeriodType.monthly:
+      return DateTime(date.year, date.month, 1);
+    case PeriodType.yearly:
+      return DateTime(date.year, 1, 1);
+  }
+}
+
+DateTime _computePeriodEnd(DateTime start, PeriodType type) {
+  switch (type) {
+    case PeriodType.weekly:
+      final tentative = DateTime(start.year, start.month, start.day + 6, 23, 59, 59);
+      final monthEnd = _lastDayOfMonthEnd(start.year, start.month);
+      return tentative.isAfter(monthEnd) ? monthEnd : tentative;
+    case PeriodType.monthly:
+      return _lastDayOfMonthEnd(start.year, start.month);
+    case PeriodType.yearly:
+      return DateTime(start.year, 12, 31, 23, 59, 59);
+  }
+}
+
+DateTime _lastDayOfMonthEnd(int year, int month) {
+  final firstOfNext = DateTime(year, month + 1, 1);
+  return firstOfNext.subtract(const Duration(seconds: 1));
+}
+
 class _AggregateBucket {
   final String label;
+  final DateTime periodStart;
   double total = 0;
   int count = 0;
 
-  _AggregateBucket({required this.label});
+  _AggregateBucket({required this.label, required this.periodStart});
 }

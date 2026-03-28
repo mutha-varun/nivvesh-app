@@ -4,8 +4,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/chart_data_provider.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
+// ── Sliver wrapper used on the main spend page ─────────────────────────────
+
 class SpendChart extends ConsumerWidget {
   const SpendChart({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chartData = ref.watch(spendChartDataProvider);
+
+    if (chartData.bucketDates.isEmpty ||
+        chartData.totalSeries.every((v) => v == 0)) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: SpendChartView(data: chartData),
+      ),
+    );
+  }
+}
+
+// ── Reusable chart content widget (used both on main page + detail page) ───
+
+class SpendChartView extends StatefulWidget {
+  const SpendChartView({super.key, required this.data});
+  final SpendChartData data;
+
+  @override
+  State<SpendChartView> createState() => _SpendChartViewState();
+}
+
+class _SpendChartViewState extends State<SpendChartView> {
+  ChartMode _mode = ChartMode.total;
 
   static final _gold = AppColors.dark.gold;
   static final _surface = AppColors.dark.cardSurface;
@@ -16,47 +49,34 @@ class SpendChart extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chartData = ref.watch(spendChartDataProvider);
-    final mode = ref.watch(chartModeProvider);
-
-    if (chartData.bucketDates.isEmpty ||
-        chartData.totalSeries.every((v) => v == 0)) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 16, 16, 8),
-          decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _gold.withValues(alpha: 0.28)),
+  Widget build(BuildContext context) {
+    final data = widget.data;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _gold.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        children: [
+          _ModeToggle(
+            mode: _mode,
+            onChanged: (m) => setState(() => _mode = m),
           ),
-          child: Column(
-            children: [
-              _ModeToggle(
-                mode: mode,
-                onChanged: (m) =>
-                    ref.read(chartModeProvider.notifier).state = m,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 200,
-                child: mode == ChartMode.total
-                    ? _buildTotalChart(chartData)
-                    : _buildCategoryChart(chartData),
-              ),
-              if (mode == ChartMode.byCategory &&
-                  chartData.categorySeries.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildLegend(chartData),
-              ],
-            ],
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: _mode == ChartMode.total
+                ? _buildTotalChart(data)
+                : _buildCategoryChart(data),
           ),
-        ),
+          if (_mode == ChartMode.byCategory &&
+              data.categorySeries.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildLegend(data),
+          ],
+        ],
       ),
     );
   }
@@ -199,7 +219,8 @@ class SpendChart extends ConsumerWidget {
         fitInsideHorizontally: true,
         fitInsideVertically: true,
         tooltipRoundedRadius: 10,
-        tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        tooltipPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         getTooltipColor: (_) => const Color(0xFF1A1A1A),
         getTooltipItems: (touchedSpots) {
           return touchedSpots.map((spot) {
@@ -207,7 +228,6 @@ class SpendChart extends ConsumerWidget {
             final dateLabel = (i >= 0 && i < data.bucketDates.length)
                 ? _fmtBucketLabelFull(data.bucketDates[i], data.resolution)
                 : '';
-
             return LineTooltipItem(
               '$dateLabel\n₹${_fmtAmount(spot.y)}',
               TextStyle(
@@ -260,7 +280,8 @@ class SpendChart extends ConsumerWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration:
+                  BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
             Text(e.key, style: TextStyle(color: _muted, fontSize: 11)),
@@ -284,7 +305,8 @@ class SpendChart extends ConsumerWidget {
 
   static String _fmtBucketLabel(DateTime d, ChartResolution res) {
     final thisYear = DateTime.now().year;
-    final yearSuffix = d.year != thisYear ? ' \'${d.year.toString().substring(2)}' : '';
+    final yearSuffix =
+        d.year != thisYear ? ' \'${d.year.toString().substring(2)}' : '';
     switch (res) {
       case ChartResolution.daily:
         return '${d.day} ${_months[d.month - 1]}$yearSuffix';
@@ -306,6 +328,8 @@ class SpendChart extends ConsumerWidget {
     }
   }
 }
+
+// ── Internal widgets ────────────────────────────────────────────────────────
 
 class _ModeToggle extends StatelessWidget {
   const _ModeToggle({required this.mode, required this.onChanged});

@@ -6,6 +6,7 @@ import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/core/theme/app_theme.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
+import 'package:nivvesh/presentation/transactions/pages/period_detail_page.dart';
 
 final _luxGold     = AppColors.dark.gold;
 final _luxSoftGold = AppColors.dark.goldSoft;
@@ -1057,32 +1058,51 @@ class PeriodSummarySliver extends StatelessWidget {
       sliver: SliverList.separated(
         itemCount: aggregates.length,
         separatorBuilder: (_, index) => const SizedBox(height: 10),
-        itemBuilder: (_, i) {
+        itemBuilder: (ctx, i) {
           final item = aggregates[i];
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: AppDecorations.luxCard,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.label,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+          return Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              splashColor: Colors.white.withValues(alpha: 0.05),
+              onTap: () => Navigator.of(ctx).push(
+                MaterialPageRoute(
+                  builder: (_) => PeriodDetailPage(
+                    label: item.label,
+                    periodStart: item.periodStart,
+                    periodEnd: item.periodEnd,
                   ),
                 ),
-                Text(
-                  '${item.count} txn',
-                  style: TextStyle(color: _luxMuted, fontSize: 12),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: AppDecorations.luxCard,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${item.count} txn',
+                      style: TextStyle(color: _luxMuted, fontSize: 12),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '₹${item.total.toStringAsFixed(2)}',
+                      style: TextStyle(color: _luxGold, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.chevron_right_rounded, color: _luxMuted, size: 18),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  '₹${item.total.toStringAsFixed(2)}',
-                  style: TextStyle(color: _luxGold, fontWeight: FontWeight.w600),
-                ),
-              ],
+              ),
             ),
           );
         },

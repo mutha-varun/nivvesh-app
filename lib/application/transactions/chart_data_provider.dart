@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
+import 'package:nivvesh/domain/models/finance_model.dart';
 
 enum ChartMode { total, byCategory }
 
@@ -41,18 +42,12 @@ const categoryChartColors = <String, Color>{
   PaymentCategories.uncategorized: Color(0xFF9E9E9E),
 };
 
-final chartModeProvider = StateProvider<ChartMode>((ref) => ChartMode.total);
+/// Pure function — builds chart data from any transaction list + date range.
+SpendChartData buildChartData(
+    List<FinanceModel> transactions, DateTime from, DateTime to) {
+  final resolution = autoResolution(from, to);
+  final bucketDates = _generateBuckets(from, to, resolution);
 
-final spendChartDataProvider = Provider<SpendChartData>((ref) {
-  final result = ref.watch(filteredFinanceProvider);
-  final filter = ref.watch(filterProvider);
-  final transactions = result.filteredTransactions;
-
-  final resolution = autoResolution(filter.dateFrom, filter.dateTo);
-  final bucketDates =
-      _generateBuckets(filter.dateFrom, filter.dateTo, resolution);
-
-  // Build key -> index map for O(1) lookup
   final keyToIndex = <String, int>{};
   for (int i = 0; i < bucketDates.length; i++) {
     keyToIndex[_bucketKey(bucketDates[i])] = i;
@@ -60,7 +55,6 @@ final spendChartDataProvider = Provider<SpendChartData>((ref) {
 
   final totalSeries = List<double>.filled(bucketDates.length, 0);
 
-  // Collect debit categories
   final categories = <String>{};
   for (final t in transactions) {
     if (t.category != PaymentCategories.creditCategory) {
@@ -89,6 +83,13 @@ final spendChartDataProvider = Provider<SpendChartData>((ref) {
     totalSeries: totalSeries,
     categorySeries: categorySeries,
   );
+}
+
+final spendChartDataProvider = Provider<SpendChartData>((ref) {
+  final result = ref.watch(filteredFinanceProvider);
+  final filter = ref.watch(filterProvider);
+  return buildChartData(
+      result.filteredTransactions, filter.dateFrom, filter.dateTo);
 });
 
 
@@ -108,7 +109,7 @@ DateTime _bucketStart(DateTime date, ChartResolution res) {
     case ChartResolution.daily:
       return DateTime(date.year, date.month, date.day);
     case ChartResolution.weekly:
-      final weekday = date.weekday; // Monday = 1
+      final weekday = date.weekday;
       return DateTime(date.year, date.month, date.day - (weekday - 1));
     case ChartResolution.monthly:
       return DateTime(date.year, date.month);
