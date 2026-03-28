@@ -580,91 +580,6 @@ class EmptyState extends StatelessWidget {
 class FilterToolbar extends ConsumerWidget {
   const FilterToolbar({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filter = ref.watch(filterProvider);
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _ToolbarChip(
-              icon: Icons.calendar_today_rounded,
-              label: 'Year ${filter.selectedYear}',
-              onTap: () => _showListSheet<int>(
-                context, ref,
-                items: List.generate(6, (i) => DateTime.now().year - i),
-                label: (y) => '$y',
-                selected: filter.selectedYear,
-                onSelect: (y) => ref.read(filterProvider.notifier).state =
-                    filter.copyWith(year: y),
-              ),
-            ),
-            _ToolbarChip(
-              icon: Icons.date_range_rounded,
-              label: filter.selectedMonth == null
-                  ? 'All Months'
-                  : _monthName(filter.selectedMonth!),
-              onTap: () => _showListSheet<int>(
-                context, ref,
-                items: List.generate(13, (i) => i),
-                label: (i) => i == 0 ? 'All Months' : _months[i - 1],
-                selected: filter.selectedMonth ?? 0,
-                onSelect: (v) => ref.read(filterProvider.notifier).state =
-                    filter.copyWith(month: v == 0 ? -1 : v),
-              ),
-            ),
-            _ToolbarChip(
-              icon: Icons.view_list_rounded,
-              label: filter.grouping == GroupingType.category
-                  ? 'Category View'
-                  : 'Summary View',
-              onTap: () {
-                final next = filter.grouping == GroupingType.category
-                    ? GroupingType.period
-                    : GroupingType.category;
-                ref.read(filterProvider.notifier).state =
-                    filter.copyWith(grouping: next);
-              },
-            ),
-            if (filter.grouping == GroupingType.period)
-              _ToolbarChip(
-                icon: Icons.timeline_rounded,
-                label: _periodLabel(filter.periodType),
-                onTap: () => _showListSheet<PeriodType>(
-                  context, ref,
-                  items: PeriodType.values,
-                  label: _periodLabel,
-                  selected: filter.periodType,
-                  onSelect: (t) => ref.read(filterProvider.notifier).state =
-                      filter.copyWith(periodType: t),
-                ),
-              ),
-            _ToolbarChip(
-              icon: Icons.category_rounded,
-              label: filter.selectedCategories.isEmpty
-                  ? 'All Categories'
-                  : '${filter.selectedCategories.length} selected',
-              onTap: () => _showCategorySelector(context, ref),
-            ),
-            if (filter.selectedCategories.isNotEmpty)
-              _ToolbarChip(
-                icon: Icons.clear_rounded,
-                label: 'Clear Categories',
-                onTap: () {
-                  ref.read(filterProvider.notifier).state =
-                      filter.copyWith(selectedCategories: {});
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   static const _months = [
     'January',
     'February',
@@ -680,7 +595,55 @@ class FilterToolbar extends ConsumerWidget {
     'December',
   ];
 
-  String _monthName(int m) => _months[m - 1];
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(filterProvider);
+    final chips = <Widget>[];
+
+    chips.add(_ReadOnlyChip(
+      icon: Icons.calendar_today_rounded,
+      label: 'Year ${filter.selectedYear}',
+    ));
+
+    if (filter.selectedMonth != null) {
+      chips.add(_ReadOnlyChip(
+        icon: Icons.date_range_rounded,
+        label: _months[filter.selectedMonth! - 1],
+      ));
+    }
+
+    chips.add(_ReadOnlyChip(
+      icon: Icons.view_list_rounded,
+      label: filter.grouping == GroupingType.category
+          ? 'Category View'
+          : 'Summary View',
+    ));
+
+    if (filter.grouping == GroupingType.period) {
+      chips.add(_ReadOnlyChip(
+        icon: Icons.timeline_rounded,
+        label: _periodLabel(filter.periodType),
+      ));
+    }
+
+    if (filter.selectedCategories.isNotEmpty) {
+      chips.add(_ReadOnlyChip(
+        icon: Icons.category_rounded,
+        label: '${filter.selectedCategories.length} categories',
+      ));
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: chips,
+        ),
+      ),
+    );
+  }
 
   String _periodLabel(PeriodType type) {
     switch (type) {
@@ -691,115 +654,6 @@ class FilterToolbar extends ConsumerWidget {
       case PeriodType.yearly:
         return 'Yearly';
     }
-  }
-
-  void _showListSheet<T>(
-    BuildContext context,
-    WidgetRef ref, {
-    required List<T> items,
-    required String Function(T) label,
-    required T selected,
-    required void Function(T) onSelect,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: AppDecorations.luxBottomSheet(),
-        child: ListView(
-          shrinkWrap: true,
-          children: items
-              .map((item) => ListTile(
-                    title: Text(label(item),
-                        style: const TextStyle(color: Colors.white)),
-                    trailing: item == selected
-                        ? Icon(Icons.check_rounded, color: _luxGold)
-                        : null,
-                    onTap: () {
-                      onSelect(item);
-                      Navigator.pop(ctx);
-                    },
-                  ))
-              .toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showCategorySelector(BuildContext context, WidgetRef ref) {
-    final current = ref.read(filterProvider);
-    const categories = [
-      PaymentCategories.food,
-      PaymentCategories.shopping,
-      PaymentCategories.transport,
-      PaymentCategories.entertainment,
-      PaymentCategories.bills,
-      PaymentCategories.health,
-      PaymentCategories.investment,
-      PaymentCategories.creditCategory,
-      PaymentCategories.uncategorized,
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) {
-          final selected = {...current.selectedCategories};
-          return Container(
-            decoration: AppDecorations.luxBottomSheet(),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Select Categories',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: categories.map((category) {
-                      final isSelected = selected.contains(category);
-                      return FilterChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          setModalState(() {
-                            if (isSelected) {
-                              selected.remove(category);
-                            } else {
-                              selected.add(category);
-                            }
-                          });
-                          ref.read(filterProvider.notifier).state =
-                              current.copyWith(selectedCategories: selected);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Done'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 }
 
@@ -1034,44 +888,38 @@ class _SheetDropdown<T> extends StatelessWidget {
   }
 }
 
-class _ToolbarChip extends StatelessWidget {
-  const _ToolbarChip({
+class _ReadOnlyChip extends StatelessWidget {
+  const _ReadOnlyChip({
     required this.icon,
     required this.label,
-    required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _luxGold.withValues(alpha: 0.26)),
-          color: _luxSurface,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: _luxGold),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _luxGold.withValues(alpha: 0.26)),
+        color: _luxSurface,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: _luxGold),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
