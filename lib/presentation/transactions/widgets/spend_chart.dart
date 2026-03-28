@@ -315,6 +315,7 @@ class _SpendChartViewState extends State<SpendChartView> {
       case ChartResolution.weekly:
         return '${d.day} ${_months[d.month - 1]}$yearSuffix';
       case ChartResolution.monthly:
+      case ChartResolution.yearly:
         return '${_months[d.month - 1]} ${d.year.toString().substring(2)}';
     }
   }
@@ -326,6 +327,7 @@ class _SpendChartViewState extends State<SpendChartView> {
       case ChartResolution.weekly:
         return 'Wk of ${d.day} ${_months[d.month - 1]}';
       case ChartResolution.monthly:
+      case ChartResolution.yearly:
         return '${_months[d.month - 1]} ${d.year}';
     }
   }
@@ -441,12 +443,12 @@ class _SpendChartViewState extends State<SpendChartView> {
             final i = value.toInt();
             if (i < 0 || i >= count) return const SizedBox.shrink();
             final d = data.savingsMonthlyDates[i];
+            final label = data.savingsResolution == ChartResolution.yearly
+                ? '${d.year}'
+                : '${_months[d.month - 1]} ${d.year.toString().substring(2)}';
             return Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                '${_months[d.month - 1]} ${d.year.toString().substring(2)}',
-                style: TextStyle(color: _muted, fontSize: 10),
-              ),
+              child: Text(label, style: TextStyle(color: _muted, fontSize: 10)),
             );
           },
         ),
@@ -470,7 +472,9 @@ class _SpendChartViewState extends State<SpendChartView> {
             String label = '';
             if (i >= 0 && i < data.savingsMonthlyDates.length) {
               final d = data.savingsMonthlyDates[i];
-              label = '${_months[d.month - 1]} ${d.year}\n';
+              label = data.savingsResolution == ChartResolution.yearly
+                  ? '${d.year}\n'
+                  : '${_months[d.month - 1]} ${d.year}\n';
             }
             final value = spot.y;
             final isPositive = value >= 0;
