@@ -1,19 +1,20 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
-class FinanceEntrySplash extends StatefulWidget {
+class FinanceEntrySplash extends ConsumerStatefulWidget {
   const FinanceEntrySplash({super.key});
 
   @override
-  State<FinanceEntrySplash> createState() => _FinanceEntrySplashState();
+  ConsumerState<FinanceEntrySplash> createState() => _FinanceEntrySplashState();
 }
 
-class _FinanceEntrySplashState extends State<FinanceEntrySplash>
+class _FinanceEntrySplashState extends ConsumerState<FinanceEntrySplash>
     with SingleTickerProviderStateMixin {
   late final AnimationController _shimmerController;
-
   @override
   void initState() {
     super.initState();
@@ -21,7 +22,6 @@ class _FinanceEntrySplashState extends State<FinanceEntrySplash>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat();
-    _startTransition();
   }
 
   @override
@@ -30,14 +30,23 @@ class _FinanceEntrySplashState extends State<FinanceEntrySplash>
     super.dispose();
   }
 
-  Future<void> _startTransition() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1300));
+  void _maybeNavigate() {
     if (!mounted) return;
-    context.pushReplacement('/finance/sheet');
+    final ctrl = ref.read(financeControllerProvider);
+    if (!ctrl.isLoading) {
+      context.pushReplacement('/finance/sheet');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch so we re-run build (and navigate) when isLoading flips to false
+    final ctrl = ref.watch(financeControllerProvider);
+    if (!ctrl.isLoading) {
+      // Schedule after the current build frame
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeNavigate());
+    }
+
     final c = AppColors.of(context);
     return Scaffold(
       backgroundColor: c.background,

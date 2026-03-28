@@ -24,11 +24,7 @@ class FinanceSheet extends ConsumerWidget {
             isLoading: ctrl.isLoading,
             onFilterTap: () => _openTopFilters(context),
           ),
-          if (ctrl.isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (ctrl.error != null)
+          if (ctrl.error != null)
             SliverFillRemaining(
               child: ErrorState(ctrl.error!, ctrl.fetchMessages),
             )
