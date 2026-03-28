@@ -7,6 +7,7 @@ class AuthLocalDataSource {
   static const _refreshTokenKey = 'refreshToken';
   static const _accessTokenKey = 'accessToken';
   static const _phoneNumberKey = 'phoneNumber';
+  static const _redirectUrlKey = 'redirectUrl';
 
   Future<void> saveAuthToken(String accessToken, String refreshToken) async {
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
@@ -36,6 +37,7 @@ class AuthLocalDataSource {
   Future<void> deleteAllTokens() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
+    await _storage.delete(key: _redirectUrlKey);
   }
 
   Future<void> savePhoneNumber(String phoneNumber) async {
@@ -48,5 +50,17 @@ class AuthLocalDataSource {
 
   Future<void> deletePhoneNumber() async {
     await _storage.delete(key: _phoneNumberKey);
+  }
+
+  Future<void> saveRedirectUrl(String redirectUrl) async {
+    await _storage.write(key: _redirectUrlKey, value: redirectUrl);
+  }
+
+  Future<String?> getRedirectUrl() async {
+    return await _storage.read(key: _redirectUrlKey);
+  }
+
+  Future<void> deleteRedirectUrl() async {
+    await _storage.delete(key: _redirectUrlKey);
   }
 }

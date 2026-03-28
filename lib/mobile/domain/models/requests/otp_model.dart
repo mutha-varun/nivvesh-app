@@ -8,9 +8,14 @@ class OtpResponseData {
   });
 
   factory OtpResponseData.fromJson(Map<String, dynamic> json) {
+    final nestedData = json['data'];
     return OtpResponseData(
       message: json['message'] as String? ?? '',
-      redirectUrl: json['redirect_url'] as String? ?? '',
+      redirectUrl: (json['redirect_url'] as String?) ??
+          (nestedData is Map<String, dynamic>
+              ? nestedData['redirect_url'] as String?
+              : null) ??
+          '',
     );
   }
 }

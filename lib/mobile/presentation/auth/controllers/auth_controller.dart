@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/mobile/data/providers/auth_state_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:nivvesh/mobile/data/providers/auth_provider.dart';
@@ -29,7 +28,7 @@ class SignInScreenController extends _$SignInScreenController {
     state = await AsyncValue.guard(() async {
       final result = await authRepository.verifyOtp(phone, otp);
 
-      ref.read(authStateProvider.notifier).setRedirectUrl(result.redirectUrl);
+      await ref.read(authStateProvider.notifier).setRedirectUrl(result.redirectUrl);
       ref.read(authStateProvider.notifier).markAuthenticated();
     });
   }

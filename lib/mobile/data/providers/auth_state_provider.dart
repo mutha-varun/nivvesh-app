@@ -12,12 +12,24 @@ final authRedirectUrlProvider = StateProvider<String?>((ref) => null);
 class AuthState extends _$AuthState {
   @override
   FutureOr<bool> build() async {
-    final token = await ref.watch(authLocalDataSourceProvider).getAccessToken();
-    return token != null && token.isNotEmpty;
+    try {
+      final local = ref.watch(authLocalDataSourceProvider);
+      final token = await local.getAccessToken();
+      final redirectUrl = await local.getRedirectUrl();
+      if (redirectUrl != null && redirectUrl.isNotEmpty) {
+        ref.read(authRedirectUrlProvider.notifier).state = redirectUrl;
+      }
+      return token != null && token.isNotEmpty;
+    } catch (_) {
+      // If secure storage fails to decrypt/migrate for any reason, treat as signed out.
+      return false;
+    }
   }
 
   Future<void> signOut() async {
-    await ref.read(authLocalDataSourceProvider).deleteAllTokens();
+    final local = ref.read(authLocalDataSourceProvider);
+    await local.deleteAllTokens();
+    await local.deletePhoneNumber();
     ref.read(authRedirectUrlProvider.notifier).state = null;
     state = const AsyncData(false);
   }
@@ -26,7 +38,8 @@ class AuthState extends _$AuthState {
     state = const AsyncData(true);
   }
 
-  void setRedirectUrl(String url) {
+  Future<void> setRedirectUrl(String url) async {
+    await ref.read(authLocalDataSourceProvider).saveRedirectUrl(url);
     ref.read(authRedirectUrlProvider.notifier).state = url;
   }
 }

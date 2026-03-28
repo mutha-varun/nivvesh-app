@@ -2,6 +2,9 @@ plugins {
   
   id 'com.google.gms.google-services' version '4.4.2' apply false
 }
+
+import groovy.xml.XmlSlurper
+
 allprojects {
     repositories {
         google()
@@ -15,6 +18,23 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+
+subprojects { subproject ->
+    subproject.pluginManager.withPlugin("com.android.library") {
+        def androidExt = subproject.extensions.findByName("android")
+        if (androidExt != null && androidExt.hasProperty("namespace") && !androidExt.namespace) {
+            def manifestFile = subproject.file("src/main/AndroidManifest.xml")
+            def manifestPackage = null
+
+            if (manifestFile.exists()) {
+                def manifest = new XmlSlurper(false, false).parse(manifestFile)
+                manifestPackage = manifest.@package?.text()
+            }
+
+            androidExt.namespace = manifestPackage ?: "autogen.${subproject.name.replace('-', '_')}"
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

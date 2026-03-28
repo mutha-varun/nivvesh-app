@@ -5,6 +5,7 @@ import 'package:nivvesh/mobile/data/providers/auth_state_provider.dart';
 import 'package:nivvesh/mobile/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/mobile/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/mobile/presentation/home/pages/homepage.dart';
+import 'package:nivvesh/mobile/presentation/splash_page.dart';
 import 'package:nivvesh/mobile/presentation/spend/pages/spend_page.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
 
@@ -58,6 +59,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/finance',
+        builder: (context, state) => const FinanceEntrySplash(),
+      ),
+      GoRoute(
+        path: '/finance/sheet',
         builder: (context, state) => const FinanceSheet(),
       ),
       GoRoute(
@@ -86,6 +91,6 @@ class _SplashScreen extends StatelessWidget {
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(Ref ref) {
-    ref.listen(authStateProvider, (_, __) => notifyListeners());
+    ref.listen(authStateProvider, (_, next) => notifyListeners());
   }
 }
