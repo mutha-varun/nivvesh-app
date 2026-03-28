@@ -6,11 +6,11 @@ import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 
-const _luxGold = AppColors.luxGold;
-const _luxSoftGold = AppColors.luxSoftGold;
-const _luxBg = AppColors.luxBg;
-const _luxSurface = AppColors.luxSurface;
-const _luxMuted = AppColors.luxMuted;
+final _luxGold     = AppColors.dark.gold;
+final _luxSoftGold = AppColors.dark.goldSoft;
+final _luxBg       = AppColors.dark.background;
+final _luxSurface  = AppColors.dark.cardSurface;
+final _luxMuted    = AppColors.dark.muted;
 
 class AppBar extends StatelessWidget {
   const AppBar({
@@ -478,7 +478,7 @@ class _DetailRow extends StatelessWidget {
             width: 90,
             child: Text(
               label,
-              style: const TextStyle(color: _luxMuted, fontSize: 13),
+              style: TextStyle(color: _luxMuted, fontSize: 13),
             ),
           ),
           Expanded(
@@ -689,9 +689,9 @@ class FilterToolbar extends ConsumerWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _luxSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: ListView(
           shrinkWrap: true,
@@ -700,7 +700,7 @@ class FilterToolbar extends ConsumerWidget {
                 (year) => ListTile(
                   title: Text('$year', style: const TextStyle(color: Colors.white)),
                   trailing: current.selectedYear == year
-                      ? const Icon(Icons.check_rounded, color: _luxGold)
+                      ? Icon(Icons.check_rounded, color: _luxGold)
                       : null,
                   onTap: () {
                     ref.read(filterProvider.notifier).state =
@@ -721,9 +721,9 @@ class FilterToolbar extends ConsumerWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _luxSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: ListView(
           shrinkWrap: true,
@@ -731,7 +731,7 @@ class FilterToolbar extends ConsumerWidget {
             ListTile(
               title: const Text('All Months', style: TextStyle(color: Colors.white)),
               trailing: current.selectedMonth == null
-                  ? const Icon(Icons.check_rounded, color: _luxGold)
+                  ? Icon(Icons.check_rounded, color: _luxGold)
                   : null,
               onTap: () {
                 ref.read(filterProvider.notifier).state =
@@ -744,7 +744,7 @@ class FilterToolbar extends ConsumerWidget {
               (index) => ListTile(
                 title: Text(_months[index], style: const TextStyle(color: Colors.white)),
                 trailing: current.selectedMonth == index + 1
-                    ? const Icon(Icons.check_rounded, color: _luxGold)
+                    ? Icon(Icons.check_rounded, color: _luxGold)
                     : null,
                 onTap: () {
                   ref.read(filterProvider.notifier).state =
@@ -765,9 +765,9 @@ class FilterToolbar extends ConsumerWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _luxSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: ListView(
           shrinkWrap: true,
@@ -776,7 +776,7 @@ class FilterToolbar extends ConsumerWidget {
                 (type) => ListTile(
                   title: Text(_periodLabel(type), style: const TextStyle(color: Colors.white)),
                   trailing: current.periodType == type
-                      ? const Icon(Icons.check_rounded, color: _luxGold)
+                      ? Icon(Icons.check_rounded, color: _luxGold)
                       : null,
                   onTap: () {
                     ref.read(filterProvider.notifier).state =
@@ -813,9 +813,9 @@ class FilterToolbar extends ConsumerWidget {
         builder: (context, setModalState) {
           final selected = {...current.selectedCategories};
           return Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: _luxSurface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -919,9 +919,9 @@ class TopFilterSheet extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: _luxSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
         top: false,
@@ -1005,7 +1005,7 @@ class TopFilterSheet extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Categories',
                 style: TextStyle(
                   color: _luxMuted,
@@ -1106,14 +1106,14 @@ class _SheetDropdown<T> extends StatelessWidget {
         dropdownColor: const Color(0xFF141414),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: _luxMuted),
+          labelStyle: TextStyle(color: _luxMuted),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: _luxGold.withValues(alpha: 0.26)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: _luxGold),
+            borderSide: BorderSide(color: _luxGold),
           ),
         ),
         style: const TextStyle(color: Colors.white),
@@ -1229,7 +1229,7 @@ class _CategorySectionCard extends StatelessWidget {
           ),
           subtitle: Text(
             '${transactions.length} transactions',
-            style: const TextStyle(color: _luxMuted),
+            style: TextStyle(color: _luxMuted),
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1292,12 +1292,12 @@ class PeriodSummarySliver extends StatelessWidget {
                 ),
                 Text(
                   '${item.count} txn',
-                  style: const TextStyle(color: _luxMuted, fontSize: 12),
+                  style: TextStyle(color: _luxMuted, fontSize: 12),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   '₹${item.total.toStringAsFixed(2)}',
-                  style: const TextStyle(color: _luxGold, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: _luxGold, fontWeight: FontWeight.w600),
                 ),
               ],
             ),

@@ -38,8 +38,9 @@ class _FinanceEntrySplashState extends State<FinanceEntrySplash>
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     return Scaffold(
-      backgroundColor: AppColors.luxBg,
+      backgroundColor: c.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -74,10 +75,10 @@ class _FinanceEntrySplashState extends State<FinanceEntrySplash>
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Row(
         children: [
-          const Text(
+          Text(
             'Nivvesh',
             style: TextStyle(
-              color: AppColors.luxGold,
+              color: AppColors.dark.gold,
               fontWeight: FontWeight.w600,
               fontSize: 24,
             ),
@@ -95,9 +96,9 @@ class _FinanceEntrySplashState extends State<FinanceEntrySplash>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
-        color: AppColors.luxSurface,
+        color: AppColors.dark.cardSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.luxGold.withValues(alpha: 0.20)),
+        border: Border.all(color: AppColors.dark.gold.withValues(alpha: 0.20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

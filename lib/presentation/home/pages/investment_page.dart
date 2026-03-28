@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
-import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
 
 class InvestmentPage extends ConsumerWidget {
@@ -12,15 +11,16 @@ class InvestmentPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final redirectUrl = ref.watch(authRedirectUrlProvider);
+    final c = AppColors.of(context);
 
     if (redirectUrl == null || redirectUrl.isEmpty) {
       return Scaffold(
-        backgroundColor: AppColors.luxBg,
+        backgroundColor: c.background,
         appBar: AppBar(
-          backgroundColor: AppColors.luxBg,
-          title: const Text(
+          backgroundColor: c.background,
+          title: Text(
             'Investment',
-            style: TextStyle(color: AppColors.luxGold, fontWeight: FontWeight.w600),
+            style: TextStyle(color: c.gold, fontWeight: FontWeight.w600),
           ),
         ),
         body: Center(
@@ -38,8 +38,8 @@ class InvestmentPage extends ConsumerWidget {
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: AppColors.luxSurface,
-                    side: BorderSide(color: AppColors.luxGold.withValues(alpha: 0.30)),
+                    backgroundColor: c.cardSurface,
+                    side: BorderSide(color: c.gold.withValues(alpha: 0.30)),
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -8,14 +8,15 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = AppColors.of(context);
     return Scaffold(
-      backgroundColor: AppColors.luxBg,
+      backgroundColor: c.background,
       appBar: AppBar(
-        backgroundColor: AppColors.luxBg,
-        title: const Text(
+        backgroundColor: c.background,
+        title: Text(
           'Nivvesh',
           style: TextStyle(
-            color: AppColors.luxGold,
+            color: c.gold,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -67,20 +68,21 @@ class _HomeActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: AppColors.luxSurface,
-        side: BorderSide(color: AppColors.luxGold.withValues(alpha: 0.30)),
+        backgroundColor: c.cardSurface,
+        side: BorderSide(color: c.gold.withValues(alpha: 0.30)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       onPressed: onPressed,
-      icon: const Icon(Icons.arrow_forward_rounded, color: AppColors.luxGold),
+      icon: Icon(Icons.arrow_forward_rounded, color: c.gold),
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: AppColors.luxGold),
+          Icon(icon, size: 18, color: c.gold),
           const SizedBox(width: 8),
           Text(
             label,
