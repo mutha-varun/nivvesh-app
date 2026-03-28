@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
-import 'package:nivvesh/mobile/domain/models/finance_model.dart';
-import 'package:nivvesh/mobile/presentation/routing/app_router.dart';
-import 'package:nivvesh/mobile/presentation/spend/spend_provider.dart';
+import 'package:nivvesh/domain/models/finance_model.dart';
+import 'package:nivvesh/core/router/app_router.dart';
+import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:path_provider/path_provider.dart';
 // import 'package:nivvesh/banks/screens/bank_webview.dart';
 
