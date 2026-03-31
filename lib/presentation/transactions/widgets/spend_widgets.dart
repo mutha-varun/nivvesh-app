@@ -31,14 +31,9 @@ class AppBar extends StatelessWidget {
       pinned: true,
       toolbarHeight: 72,
       backgroundColor: _luxBg,
-      title: Text(
-        'Nivvesh',
-        style: TextStyle(
-          color: _luxGold,
-          fontWeight: FontWeight.w500,
-          fontSize: 24,
-          letterSpacing: 0.4,
-        ),
+      title: Image.asset(
+        'assets/nivvesh_app_plain_logo.png',
+        height: 32,
       ),
       actions: [
         if (!isLoading)

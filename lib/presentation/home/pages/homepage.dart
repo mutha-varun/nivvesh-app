@@ -13,12 +13,9 @@ class HomePage extends ConsumerWidget {
       backgroundColor: c.background,
       appBar: AppBar(
         backgroundColor: c.background,
-        title: Text(
-          'Nivvesh',
-          style: TextStyle(
-            color: c.gold,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Image.asset(
+          'assets/nivvesh_app_plain_logo.png',
+          height: 32,
         ),
       ),
       body: Center(
