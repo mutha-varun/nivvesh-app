@@ -1,29 +1,51 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
+import 'package:nivvesh/application/transactions/background_sms_handler.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/core/router/app_router.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:telephony/telephony.dart';
 // import 'package:nivvesh/banks/screens/bank_webview.dart';
 import 'package:nivvesh/core/theme/app_theme.dart';
 import 'package:nivvesh/core/theme/theme_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final directory = await getApplicationDocumentsDirectory();
   final isar = Isar.instanceNames.isEmpty
       ? await Isar.open([FinanceModelSchema], directory: directory.path)
       : Isar.getInstance()!;
-  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  // await setupServiceLocator();
+
+  // SMS background listener + notifications are Android-only
+  if (Platform.isAndroid) {
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidInit);
+    await FlutterLocalNotificationsPlugin().initialize(initSettings);
+
+    await Permission.notification.request();
+
+    final telephony = Telephony.instance;
+    telephony.listenIncomingSms(
+      onNewMessage: (SmsMessage message) async {
+        await handleIncomingSms(message);
+      },
+      onBackgroundMessage: backgroundSmsHandler,
+    );
+  }
+
   runApp(
     ProviderScope(
       overrides: [isarProvider.overrideWithValue(isar)],
       child: const MyApp(),
     ),
   );
-  // Wait until first frame is rendered to remove splash
 }
 
 class MyApp extends ConsumerWidget {
