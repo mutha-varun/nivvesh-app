@@ -11,6 +11,8 @@ class FinanceController extends ChangeNotifier {
     _init();
   }
 
+  FinanceController.noAutoInit(this._dataSource);
+
   final SmsDataSource _dataSource;
   List<FinanceModel> _messages = [];
   bool _isLoading = false;
@@ -48,7 +50,9 @@ class FinanceController extends ChangeNotifier {
       for (final sms in smsList) {
         if (lastSyncDate != null &&
             sms.date != null &&
-            sms.date!.isBefore(lastSyncDate)) break;
+            sms.date!.isBefore(lastSyncDate)) {
+          break;
+        }
 
         final model = SmsParser.parse(
           smsId: sms.id ?? DateTime.now().millisecondsSinceEpoch,
@@ -71,4 +75,13 @@ class FinanceController extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  Future<void> uploadPdf() async {}
+
+  @protected
+  void setMessages(List<FinanceModel> msgs) => _messages = msgs;
+  @protected
+  void setIsLoading(bool v) => _isLoading = v;
+  @protected
+  void setError(String? e) => _error = e;
 }

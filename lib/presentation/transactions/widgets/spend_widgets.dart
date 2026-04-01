@@ -20,10 +20,12 @@ class AppBar extends StatelessWidget {
     required this.onRefresh,
     required this.isLoading,
     required this.onFilterTap,
+    this.actionIcon = Icons.refresh_rounded,
   });
   final VoidCallback onRefresh;
   final bool isLoading;
   final VoidCallback onFilterTap;
+  final IconData actionIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class AppBar extends StatelessWidget {
       actions: [
         if (!isLoading)
           _HeaderIconButton(
-            icon: Icons.refresh_rounded,
+            icon: actionIcon,
             onTap: onRefresh,
           ),
         const SizedBox(width: 10),

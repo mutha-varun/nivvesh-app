@@ -25,19 +25,23 @@ Future<void> main() async {
 
   // SMS background listener + notifications are Android-only
   if (Platform.isAndroid) {
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidInit);
-    await FlutterLocalNotificationsPlugin().initialize(initSettings);
+    try {
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initSettings = InitializationSettings(android: androidInit);
+      await FlutterLocalNotificationsPlugin().initialize(initSettings);
 
-    await Permission.notification.request();
+      await Permission.notification.request();
 
-    final telephony = Telephony.instance;
-    telephony.listenIncomingSms(
-      onNewMessage: (SmsMessage message) async {
-        await handleIncomingSms(message);
-      },
-      onBackgroundMessage: backgroundSmsHandler,
-    );
+      final telephony = Telephony.instance;
+      telephony.listenIncomingSms(
+        onNewMessage: (SmsMessage message) async {
+          await handleIncomingSms(message);
+        },
+        onBackgroundMessage: backgroundSmsHandler,
+      );
+    } catch (e) {
+      debugPrint('Background SMS setup failed: $e');
+    }
   }
 
   runApp(

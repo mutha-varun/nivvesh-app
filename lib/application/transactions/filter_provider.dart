@@ -5,8 +5,9 @@ enum PeriodType { weekly, monthly, yearly }
 
 FinanceFilterState defaultFilter() {
   final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30));
   return FinanceFilterState(
-    dateFrom: DateTime(now.year, now.month, 1),
+    dateFrom: DateTime(thirtyDaysAgo.year, thirtyDaysAgo.month, thirtyDaysAgo.day),
     dateTo: DateTime(now.year, now.month, now.day, 23, 59, 59),
   );
 }
@@ -28,7 +29,8 @@ class FinanceFilterState {
 
   bool get hasNonDefaultDateRange {
     final now = DateTime.now();
-    final defFrom = DateTime(now.year, now.month, 1);
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final defFrom = DateTime(thirtyDaysAgo.year, thirtyDaysAgo.month, thirtyDaysAgo.day);
     return dateFrom != defFrom ||
         dateTo.year != now.year ||
         dateTo.month != now.month ||

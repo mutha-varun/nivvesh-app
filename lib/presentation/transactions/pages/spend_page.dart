@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart' hide AppBar;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
@@ -20,13 +22,19 @@ class FinanceSheet extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           AppBar(
-            onRefresh: ctrl.fetchMessages,
+            onRefresh: Platform.isIOS ? ctrl.uploadPdf : ctrl.fetchMessages,
             isLoading: ctrl.isLoading,
             onFilterTap: () => _openTopFilters(context),
+            actionIcon: Platform.isIOS
+                ? Icons.upload_file_rounded
+                : Icons.refresh_rounded,
           ),
           if (ctrl.error != null)
             SliverFillRemaining(
-              child: ErrorState(ctrl.error!, ctrl.fetchMessages),
+              child: ErrorState(
+              ctrl.error!,
+              Platform.isIOS ? ctrl.uploadPdf : ctrl.fetchMessages,
+            ),
             )
           else if (ctrl.messages.isEmpty)
             const SliverFillRemaining(child: EmptyState())

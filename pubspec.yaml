@@ -51,6 +51,7 @@ dependencies:
   fl_chart: ^0.69.0
   telephony: ^0.2.0
   flutter_local_notifications: ^18.0.1
+  file_picker: ^8.0.0
   
 
 
