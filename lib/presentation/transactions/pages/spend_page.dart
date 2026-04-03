@@ -29,7 +29,13 @@ class FinanceSheet extends ConsumerWidget {
                 ? Icons.upload_file_rounded
                 : Icons.refresh_rounded,
           ),
-          if (ctrl.error != null)
+          if (ctrl.error != null && ctrl.needsPassword)
+            SliverFillRemaining(
+              child: _PasswordPrompt(
+                onSubmit: (password) => ctrl.retryWithPassword(password),
+              ),
+            )
+          else if (ctrl.error != null)
             SliverFillRemaining(
               child: ErrorState(
               ctrl.error!,
@@ -60,6 +66,87 @@ class FinanceSheet extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const TopFilterSheet(),
+    );
+  }
+}
+
+class _PasswordPrompt extends StatelessWidget {
+  const _PasswordPrompt({required this.onSubmit});
+  final void Function(String) onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline_rounded, size: 48, color: Color(0xFFFFD700)),
+            const SizedBox(height: 16),
+            const Text(
+              'Password Protected',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This PDF requires a password to open.',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _showDialog(context),
+              icon: const Icon(Icons.key_rounded),
+              label: const Text('Enter Password'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('Enter PDF Password', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Password',
+            hintStyle: TextStyle(color: Colors.grey),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD700))),
+          ),
+          onSubmitted: (value) {
+            Navigator.pop(ctx);
+            onSubmit(value);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onSubmit(controller.text);
+            },
+            child: const Text('Open', style: TextStyle(color: Color(0xFFFFD700))),
+          ),
+        ],
+      ),
     );
   }
 }

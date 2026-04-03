@@ -47,7 +47,7 @@ class SmsParser {
     if (!isDebit && !isCredit && !(isUpiSender && hasTxnContext)) return null;
 
     final effectiveIsDebit = isDebit || (!isCredit && isUpiSender);
-    final category = _inferCategory(bodyLower, effectiveIsDebit);
+    final category = inferCategory(bodyLower, effectiveIsDebit);
 
     String? transactionKeyword;
     final hints = effectiveIsDebit
@@ -90,7 +90,9 @@ class SmsParser {
     return null;
   }
 
-  static String _inferCategory(String bodyLower, bool isDebit) {
+  /// Infer a spending category from text content.
+  /// Shared by both SMS and PDF parsers.
+  static String inferCategory(String bodyLower, bool isDebit) {
     if (!isDebit) return PaymentCategories.creditCategory;
 
     for (final entry in PaymentCategories.vpaIdentifiers.entries) {

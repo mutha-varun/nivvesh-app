@@ -77,7 +77,11 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<void> uploadPdf() async {}
+  Future<void> retryWithPassword(String password) async {}
+  bool get needsPassword => false;
 
+  @protected
+  SmsDataSource get dataSource => _dataSource;
   @protected
   void setMessages(List<FinanceModel> msgs) => _messages = msgs;
   @protected
