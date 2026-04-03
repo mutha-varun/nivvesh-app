@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
+import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_widgets.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_chart.dart';
+import 'package:nivvesh/presentation/transactions/widgets/alert_config_sheet.dart';
 
 class FinanceSheet extends ConsumerWidget {
   const FinanceSheet({super.key});
@@ -17,6 +19,7 @@ class FinanceSheet extends ConsumerWidget {
     final ctrl = ref.watch(financeControllerProvider);
     final filtered = ref.watch(filteredFinanceProvider);
     final filterState = ref.watch(filterProvider);
+    ref.watch(alertConfigProvider); // eagerly load so SharedPreferences are ready before sheet opens
     return Scaffold(
       backgroundColor: _luxBg,
       body: CustomScrollView(
@@ -25,6 +28,7 @@ class FinanceSheet extends ConsumerWidget {
             onRefresh: Platform.isIOS ? ctrl.uploadPdf : ctrl.fetchMessages,
             isLoading: ctrl.isLoading,
             onFilterTap: () => _openTopFilters(context),
+            onAlertTap: () => _openAlertConfig(context),
             actionIcon: Platform.isIOS
                 ? Icons.upload_file_rounded
                 : Icons.refresh_rounded,
@@ -57,6 +61,15 @@ class FinanceSheet extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+
+  void _openAlertConfig(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AlertConfigSheet(),
     );
   }
 

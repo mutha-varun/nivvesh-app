@@ -24,12 +24,8 @@ import 'sms_parser.dart';
 /// SharedPreferences keys used for threshold tracking.
 const _kMonthlySp = 'bg_monthly_spend';
 const _kTrackedMonth = 'bg_tracked_month';
-const _kAlerted50 = 'bg_alerted_50';
-const _kAlerted80 = 'bg_alerted_80';
-
-/// The Flutter side should store salary with this key:
-///   `SharedPreferences.setDouble('user_salary', salary)`
 const _kSalary = 'user_salary';
+const _kThresholds = 'spend_alert_thresholds';
 
 /// Must be a top-level function for the telephony plugin.
 @pragma('vm:entry-point')
@@ -63,14 +59,29 @@ Future<void> _handleIncomingSms(SmsMessage message) async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  // --- Reset on month change ---
+  //Load user-configured thresholds (default 50, 80)
+  final rawThresholds = prefs.getString(_kThresholds);
+  List<int> thresholds;
+  if (rawThresholds != null && rawThresholds.isNotEmpty) {
+    thresholds = rawThresholds
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList()
+      ..sort((a, b) => b.compareTo(a)); // highest first
+  } else {
+    thresholds = [80, 50];
+  }
+
+  //Reset on month change
   final now = DateTime.now();
   final currentMonth = '${now.year}-${now.month}';
   if (prefs.getString(_kTrackedMonth) != currentMonth) {
     await prefs.setString(_kTrackedMonth, currentMonth);
     await prefs.setDouble(_kMonthlySp, 0);
-    await prefs.setBool(_kAlerted50, false);
-    await prefs.setBool(_kAlerted80, false);
+    for (final t in thresholds) {
+      await prefs.remove('bg_alerted_$t');
+    }
   }
 
   // --- Accumulate spend ---
@@ -83,28 +94,22 @@ Future<void> _handleIncomingSms(SmsMessage message) async {
 
   final ratio = spend / salary;
 
-  // Check 80% first — if a single txn jumps past both, fire the higher alert.
-  if (ratio >= 0.8 && !(prefs.getBool(_kAlerted80) ?? false)) {
-    await prefs.setBool(_kAlerted80, true);
-    await _showNotification(
-      id: 5002,
-      title: 'Budget Warning',
-      body: 'Warning: 80% of your monthly budget is used!',
-    );
-  } else if (ratio >= 0.5 && !(prefs.getBool(_kAlerted50) ?? false)) {
-    await prefs.setBool(_kAlerted50, true);
-    await _showNotification(
-      id: 5001,
-      title: 'Budget Alert',
-      body: "You've used 50% of your monthly budget.",
-    );
+  // Check highest first — fire only the most severe unalerted threshold.
+  for (final percent in thresholds) {
+    final key = 'bg_alerted_$percent';
+    if (ratio >= (percent.toDouble() / 100) && !(prefs.getBool(key) ?? false)) {
+      await prefs.setBool(key, true);
+      await _showNotification(
+        id: 5000 + percent,
+        title: percent >= 80 ? 'Budget Warning' : 'Budget Alert',
+        body: "You've used $percent% of your monthly budget.",
+      );
+      break; // one notification per SMS
+    }
   }
 }
 
-// ---------------------------------------------------------------------------
 // Notification helper
-// ---------------------------------------------------------------------------
-
 const _channelId = 'budget_alerts';
 const _channelName = 'Budget Alerts';
 

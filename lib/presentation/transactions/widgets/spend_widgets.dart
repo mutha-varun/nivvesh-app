@@ -20,11 +20,13 @@ class AppBar extends StatelessWidget {
     required this.onRefresh,
     required this.isLoading,
     required this.onFilterTap,
+    this.onAlertTap,
     this.actionIcon = Icons.refresh_rounded,
   });
   final VoidCallback onRefresh;
   final bool isLoading;
   final VoidCallback onFilterTap;
+  final VoidCallback? onAlertTap;
   final IconData actionIcon;
 
   @override
@@ -38,6 +40,11 @@ class AppBar extends StatelessWidget {
         height: 32,
       ),
       actions: [
+        if (!isLoading && onAlertTap != null)
+          _HeaderIconButton(
+            icon: Icons.notifications_outlined,
+            onTap: onAlertTap!,
+          ),
         if (!isLoading)
           _HeaderIconButton(
             icon: actionIcon,
