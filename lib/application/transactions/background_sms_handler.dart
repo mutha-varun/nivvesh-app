@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telephony/telephony.dart';
 
+import 'savings_evaluator.dart';
 import 'sms_parser.dart';
 
 // ---------------------------------------------------------------------------
@@ -73,15 +74,22 @@ Future<void> _handleIncomingSms(SmsMessage message) async {
     thresholds = [80, 50];
   }
 
-  //Reset on month change
+  //Reset on month change — snapshot previous month's spend for savings eval
   final now = DateTime.now();
   final currentMonth = '${now.year}-${now.month}';
   if (prefs.getString(_kTrackedMonth) != currentMonth) {
+    // Snapshot last month's spend before resetting
+    final lastMonthSpend = prefs.getDouble(_kMonthlySp) ?? 0;
+    await prefs.setDouble(kPrevMonthSpend, lastMonthSpend);
+
     await prefs.setString(_kTrackedMonth, currentMonth);
     await prefs.setDouble(_kMonthlySp, 0);
     for (final t in thresholds) {
       await prefs.remove('bg_alerted_$t');
     }
+
+    // Trigger savings evaluation for the month that just ended
+    await evaluateMonthlySavings();
   }
 
   // --- Accumulate spend ---
