@@ -344,10 +344,6 @@ List<LineChartBarData> _buildOverviewBars(
       color: const Color(0xFF34D399),
       barWidth: 2,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(
-        show: true,
-        color: const Color(0x1A34D399),
-      ),
     ),
     LineChartBarData(
       spots: expenseSpots,
@@ -355,10 +351,6 @@ List<LineChartBarData> _buildOverviewBars(
       color: const Color(0xFFFB7185),
       barWidth: 2,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(
-        show: true,
-        color: const Color(0x1AFB7185),
-      ),
     ),
     LineChartBarData(
       spots: savingsSpots,
@@ -366,10 +358,6 @@ List<LineChartBarData> _buildOverviewBars(
       color: const Color(0xFF3B82F6),
       barWidth: 2,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(
-        show: true,
-        color: const Color(0x1A3B82F6),
-      ),
     ),
   ];
 }
@@ -395,10 +383,6 @@ List<LineChartBarData> _buildCategoryBars(
         color: swatch.base,
         barWidth: 2,
         dotData: const FlDotData(show: false),
-        belowBarData: BarAreaData(
-          show: true,
-          color: swatch.tint20,
-        ),
       ),
     );
   }

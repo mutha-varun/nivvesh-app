@@ -15,26 +15,29 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate(
-                const [
-                  HomeHeader(),
-                  SizedBox(height: 20),
-                  HomeBalanceCard(),
-                  SizedBox(height: 20),
-                  HomeCashflowCard(),
-                  SizedBox(height: 20),
-                  HomeFdComparison(),
-                  SizedBox(height: 80),
-                ],
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate(
+                  const [
+                    HomeHeader(),
+                    SizedBox(height: 20),
+                    HomeBalanceCard(),
+                    SizedBox(height: 20),
+                    HomeCashflowCard(),
+                    SizedBox(height: 20),
+                    HomeFdComparison(),
+                    SizedBox(height: 80),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
