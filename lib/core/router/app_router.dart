@@ -68,7 +68,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/history',
                 builder: (context, state) =>
-                    const FinanceSheet(),
+                    const HistoryPage(),
               ),
             ],
           ),
@@ -111,7 +111,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/finance/sheet',
-        builder: (context, state) => const FinanceSheet(),
+        builder: (context, state) => const HistoryPage(),
       ),
       GoRoute(
         path: '/bank',

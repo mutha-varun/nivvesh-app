@@ -10,8 +10,8 @@ import 'package:nivvesh/presentation/transactions/widgets/spend_widgets.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_chart.dart';
 import 'package:nivvesh/presentation/transactions/widgets/alert_config_sheet.dart';
 
-class FinanceSheet extends ConsumerWidget {
-  const FinanceSheet({super.key});
+class HistoryPage extends ConsumerWidget {
+  const HistoryPage({super.key});
   static const _luxBg = Color(0xFF000000);
 
   @override
@@ -49,7 +49,7 @@ class FinanceSheet extends ConsumerWidget {
           else if (ctrl.messages.isEmpty)
             const SliverFillRemaining(child: EmptyState())
           else ...[
-            SummaryBar(messages: filtered.filteredTransactions),
+            // SummaryBar(messages: filtered.filteredTransactions),
             const SpendChart(),
             const FilterToolbar(),
             if (filtered.filteredTransactions.isEmpty)
