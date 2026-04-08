@@ -5,6 +5,8 @@ import 'package:nivvesh/application/auth/auth_state_provider.dart';
 import 'package:nivvesh/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
+import 'package:nivvesh/presentation/shell/coming_soon_page.dart';
+import 'package:nivvesh/presentation/shell/main_shell.dart';
 import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
@@ -49,9 +51,55 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (context, state) => const LoginPage(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomePage(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomePage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/history',
+                builder: (context, state) =>
+                    const FinanceSheet(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/ai',
+                builder: (context, state) =>
+                    const ComingSoonPage(tabName: 'AI Insights'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/journey',
+                builder: (context, state) =>
+                    const ComingSoonPage(tabName: 'Journey'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/alerts',
+                builder: (context, state) =>
+                    const ComingSoonPage(tabName: 'Alerts'),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/investment',
@@ -72,8 +120,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           title: 'Bank',
         ),
       ),
-
-      
     ],
   );
 });
