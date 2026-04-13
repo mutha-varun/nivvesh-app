@@ -16,6 +16,8 @@ class InAppWebViewScreen extends StatefulWidget {
 }
 
 class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
+  InAppWebViewController? _webViewController;
+
   @override
   void initState() {
     super.initState();
@@ -88,10 +90,19 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
     return NavigationActionPolicy.CANCEL;
   }
 
+  Future<bool> _onWillPop() async {
+    final controller = _webViewController;
+    if (controller != null && await controller.canGoBack()) {
+      await controller.goBack();
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
+    return WillPopScope(
+      onWillPop: _onWillPop,
       child: Scaffold(
         // No AppBar — full-screen WebView like a mobile app
         body: SafeArea(
@@ -105,7 +116,9 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
               useOnDownloadStart: true,
               useShouldOverrideUrlLoading: true,
             ),
-            onWebViewCreated: (_) {},
+            onWebViewCreated: (controller) {
+              _webViewController = controller;
+            },
             onLoadStart: (controller, uri) {
               // no progress UI
             },
