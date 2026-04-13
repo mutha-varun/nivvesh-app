@@ -15,20 +15,37 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.background,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/bank'),
-        icon: Icon(Icons.account_balance, color: c.primaryText),
-        label: Text(
-          'FDs',
-          style: TextStyle(
-            color: c.primaryText,
-            fontWeight: FontWeight.w700,
+      floatingActionButton: GestureDetector(
+        onTap: () => context.push('/bank'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                c.accentPrimary,
+                c.accentPrimary.withValues(alpha: 0.55),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.account_balance, size: 16, color: c.primaryText),
+              const SizedBox(width: 6),
+              Text(
+                'FDs',
+                style: TextStyle(
+                  color: c.primaryText,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
-        backgroundColor: c.surfaceTintLow,
-        foregroundColor: c.primaryText,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       body: SafeArea(
         bottom: false,
