@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/presentation/home/widgets/home_balance_card.dart';
 import 'package:nivvesh/presentation/home/widgets/home_cashflow_card.dart';
-import 'package:nivvesh/presentation/home/widgets/home_fd_comparison.dart';
 import 'package:nivvesh/presentation/home/widgets/home_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -15,6 +15,12 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.background,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/bank'),
+        icon: const Icon(Icons.account_balance),
+        label: const Text('FDs'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
@@ -29,8 +35,6 @@ class HomePage extends ConsumerWidget {
                     HomeBalanceCard(),
                     SizedBox(height: 20),
                     HomeCashflowCard(),
-                    SizedBox(height: 20),
-                    HomeFdComparison(),
                     SizedBox(height: 80),
                   ],
                 ),
