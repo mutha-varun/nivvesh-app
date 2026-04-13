@@ -15,18 +15,18 @@ class AppTheme {
       scaffoldBackgroundColor: c.background,
       colorScheme: isDark
           ? ColorScheme.dark(
-              primary: c.gold,
+              primary: c.accentPrimary,
               onPrimary: Colors.black,
               secondary: c.accent,
               onSecondary: c.accentText,
               surface: c.surface,
               onSurface: c.primaryText,
               error: c.error,
-              outline: c.border,
+              outline: c.borderSubtle,
             )
           : ColorScheme.light(
-              primary: c.gold,
-              onPrimary: c.accentText,
+              primary: c.accentPrimary,
+              onPrimary: Colors.black,
               secondary: c.accent,
               onSecondary: c.accentText,
               surface: c.surface,
@@ -41,16 +41,20 @@ class AppTheme {
         elevation: 0,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? c.cardSurface : c.surfaceContainerLow,
-        selectedColor: c.gold.withValues(alpha: isDark ? 0.18 : 0.15),
-        side: BorderSide(color: isDark ? c.gold.withValues(alpha: 0.22) : c.outlineVariant),
+        backgroundColor: isDark ? c.surfaceTintLow : c.surfaceContainerLow,
+        selectedColor: c.accentPrimary.withValues(alpha: isDark ? 0.18 : 0.15),
+        side: BorderSide(
+          color: isDark
+              ? c.accentPrimary.withValues(alpha: 0.35)
+              : c.outlineVariant,
+        ),
         labelStyle: GoogleFonts.inter(
           color: c.primaryText,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: GoogleFonts.inter(
-          color: c.gold,
+          color: c.accentPrimary,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
@@ -59,8 +63,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: c.gold,
-          foregroundColor: isDark ? Colors.black : c.accentText,
+          backgroundColor: c.accentPrimary,
+          foregroundColor: Colors.black,
           textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -68,12 +72,16 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: c.primaryText,
-          side: BorderSide(color: isDark ? c.gold.withValues(alpha: 0.35) : c.outlineVariant),
+          side: BorderSide(
+            color: isDark
+                ? c.borderSubtle
+                : c.outlineVariant,
+          ),
           textStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
-      dividerTheme: DividerThemeData(color: c.border, thickness: 1),
+      dividerTheme: DividerThemeData(color: c.borderSubtle, thickness: 1),
     );
   }
 
@@ -102,27 +110,27 @@ class AppTheme {
   }
 }
 
-/// Static decoration helpers. Dark-only for now; extend when light theme is polished.
+/// Static decoration helpers.
 class AppDecorations {
   AppDecorations._();
 
-  /// Bottom sheet container with gold border.
+  /// Bottom sheet container.
   static BoxDecoration luxBottomSheet({double radius = 20}) => BoxDecoration(
-        color: AppColors.dark.cardSurface,
+        color: AppColors.dark.surfaceTintHigh,
         borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
-        border: Border.all(color: AppColors.dark.gold.withValues(alpha: 0.20)),
+        border: Border.all(color: AppColors.dark.borderSubtle),
       );
 
   /// Card used in period-summary rows.
   static final BoxDecoration luxCard = BoxDecoration(
-    color: AppColors.dark.cardSurface,
+    color: AppColors.dark.surfaceTintLow,
     borderRadius: BorderRadius.circular(14),
-    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+    border: Border.all(color: AppColors.dark.borderSubtle),
   );
 
   /// 40×4 drag handle pill inside bottom sheets.
   static final BoxDecoration dragHandle = BoxDecoration(
-    color: Colors.white.withValues(alpha: 0.18),
+    color: AppColors.dark.borderSubtle,
     borderRadius: BorderRadius.circular(2),
   );
 }

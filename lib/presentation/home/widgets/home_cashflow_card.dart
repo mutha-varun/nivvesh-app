@@ -38,11 +38,11 @@ class HomeCashflowCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _ModeToggleButton(
-                selected: mode,
-                onChanged: (next) =>
-                    ref.read(homeGraphModeProvider.notifier).state = next,
-              ),
+              // _ModeToggleButton(
+              //   selected: mode,
+              //   onChanged: (next) =>
+              //       ref.read(homeGraphModeProvider.notifier).state = next,
+              // ),
               const SizedBox(width: 8),
               _PeriodSegmentedControl(
                 selected: period,
@@ -99,9 +99,9 @@ class _LegendChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: c.borderSubtle),
+        // color: color.withValues(alpha: 0.14),
+        // borderRadius: BorderRadius.circular(999),
+        // border: Border.all(color: c.borderSubtle),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -127,42 +127,42 @@ class _LegendChip extends StatelessWidget {
   }
 }
 
-class _ModeToggleButton extends StatelessWidget {
-  const _ModeToggleButton({
-    required this.selected,
-    required this.onChanged,
-  });
+// class _ModeToggleButton extends StatelessWidget {
+//   const _ModeToggleButton({
+//     required this.selected,
+//     required this.onChanged,
+//   });
 
-  final HomeGraphMode selected;
-  final ValueChanged<HomeGraphMode> onChanged;
+//   final HomeGraphMode selected;
+//   final ValueChanged<HomeGraphMode> onChanged;
 
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    final isOverview = selected == HomeGraphMode.overview;
+//   @override
+//   Widget build(BuildContext context) {
+//     final c = AppColors.of(context);
+//     final isOverview = selected == HomeGraphMode.overview;
 
-    return GestureDetector(
-      onTap: () => onChanged(
-        isOverview ? HomeGraphMode.category : HomeGraphMode.overview,
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: c.borderSubtle),
-        ),
-        child: Text(
-          isOverview ? 'Overview' : 'Category',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: c.primaryText,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      ),
-    );
-  }
-}
+//     return GestureDetector(
+//       onTap: () => onChanged(
+//         isOverview ? HomeGraphMode.category : HomeGraphMode.overview,
+//       ),
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+//         decoration: BoxDecoration(
+//           color: c.surface,
+//           borderRadius: BorderRadius.circular(8),
+//           border: Border.all(color: c.borderSubtle),
+//         ),
+//         child: Text(
+//           isOverview ? 'Overview' : 'Category',
+//           style: Theme.of(context).textTheme.labelSmall?.copyWith(
+//                 color: c.primaryText,
+//                 fontWeight: FontWeight.w600,
+//               ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _PeriodSegmentedControl extends StatelessWidget {
   const _PeriodSegmentedControl({

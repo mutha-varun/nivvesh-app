@@ -17,24 +17,16 @@ class HomeBalanceCard extends ConsumerWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: c.borderSubtle),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [c.surfaceTintHigh, c.surface],
+          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
         ),
       ),
       child: Stack(
         children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: _BlurDot(color: c.accentTint20),
-          ),
-          Positioned(
-            left: -20,
-            top: -16,
-            child: _BlurDot(color: c.categories.purple.tint20),
-          ),
+          
+          
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -82,24 +74,6 @@ class HomeBalanceCard extends ConsumerWidget {
   }
 }
 
-class _BlurDot extends StatelessWidget {
-  const _BlurDot({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
-    );
-  }
-}
-
 class _MoneyTile extends StatelessWidget {
   const _MoneyTile({
     required this.label,
@@ -122,8 +96,9 @@ class _MoneyTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: c.surfaceTintLow,
+        color: const Color(0x660A0F1A),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.borderSubtle.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,8 +206,9 @@ class _IncomeEditorTileState extends ConsumerState<_IncomeEditorTile> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: c.surfaceTintLow,
+          color: const Color(0x660A0F1A),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: c.borderSubtle.withValues(alpha: 0.4)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

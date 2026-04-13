@@ -40,9 +40,6 @@ class SpendChartView extends StatefulWidget {
 class _SpendChartViewState extends State<SpendChartView> {
   ChartMode _mode = ChartMode.total;
 
-  static final _gold = AppColors.dark.gold;
-  static final _surface = AppColors.dark.cardSurface;
-  static final _muted = AppColors.dark.muted;
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -50,13 +47,14 @@ class _SpendChartViewState extends State<SpendChartView> {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     final data = widget.data;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 16, 16, 8),
       decoration: BoxDecoration(
-        color: _surface,
+        color: c.surfaceTintLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _gold.withValues(alpha: 0.28)),
+        border: Border.all(color: c.borderSubtle),
       ),
       child: Column(
         children: [
@@ -68,22 +66,22 @@ class _SpendChartViewState extends State<SpendChartView> {
           SizedBox(
             height: 200,
             child: switch (_mode) {
-              ChartMode.total => _buildTotalChart(data),
-              ChartMode.byCategory => _buildCategoryChart(data),
-              ChartMode.savings => _buildSavingsChart(data),
+              ChartMode.total => _buildTotalChart(data, c),
+              ChartMode.byCategory => _buildCategoryChart(data, c),
+              ChartMode.savings => _buildSavingsChart(data, c),
             },
           ),
           if (_mode == ChartMode.byCategory &&
               data.categorySeries.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildLegend(data),
+            _buildLegend(data, c),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildTotalChart(SpendChartData data) {
+  Widget _buildTotalChart(SpendChartData data, AppColorsBase c) {
     final spots = <FlSpot>[];
     for (int i = 0; i < data.totalSeries.length; i++) {
       spots.add(FlSpot(i.toDouble(), data.totalSeries[i]));
@@ -96,40 +94,29 @@ class _SpendChartViewState extends State<SpendChartView> {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.3,
-            color: _gold,
-            barWidth: 1.5,
+            color: c.expenseNegative,
+            barWidth: 2,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  _gold.withValues(alpha: 0.3),
-                  _gold.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
           ),
         ],
-        gridData: _gridData(),
-        titlesData: _titlesData(data),
+        gridData: _gridData(c),
+        titlesData: _titlesData(data, c),
         borderData: FlBorderData(show: false),
-        lineTouchData: _touchData(data),
+        lineTouchData: _touchData(data, c),
         minY: 0,
       ),
     );
   }
 
-  Widget _buildCategoryChart(SpendChartData data) {
+  Widget _buildCategoryChart(SpendChartData data, AppColorsBase c) {
     final bars = <LineChartBarData>[];
     final activeEntries = data.categorySeries.entries
         .where((e) => !e.value.every((v) => v == 0))
         .toList();
 
     for (final entry in activeEntries) {
-      final color = categoryChartColors[entry.key] ?? Colors.grey;
+      final color = c.categories.forCategory(entry.key).base;
       final spots = <FlSpot>[];
       for (int i = 0; i < entry.value.length; i++) {
         spots.add(FlSpot(i.toDouble(), entry.value[i]));
@@ -140,35 +127,35 @@ class _SpendChartViewState extends State<SpendChartView> {
         isCurved: true,
         curveSmoothness: 0.3,
         color: color,
-        barWidth: 1.2,
+        barWidth: 2,
         isStrokeCapRound: true,
         dotData: const FlDotData(show: false),
-        belowBarData: BarAreaData(show: false),
       ));
     }
 
     return LineChart(
       LineChartData(
         lineBarsData: bars,
-        gridData: _gridData(),
-        titlesData: _titlesData(data),
+        gridData: _gridData(c),
+        titlesData: _titlesData(data, c),
         borderData: FlBorderData(show: false),
-        lineTouchData: _touchData(data),
+        lineTouchData: _touchData(data, c),
         minY: 0,
       ),
     );
   }
 
-  FlGridData _gridData() => FlGridData(
+  FlGridData _gridData(AppColorsBase c) => FlGridData(
         show: true,
         drawVerticalLine: false,
         getDrawingHorizontalLine: (_) => FlLine(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: c.borderSubtle,
           strokeWidth: 1,
+          dashArray: [4, 4],
         ),
       );
 
-  FlTitlesData _titlesData(SpendChartData data) {
+  FlTitlesData _titlesData(SpendChartData data, AppColorsBase c) {
     final count = data.bucketDates.length;
     final interval = count <= 7 ? 1 : (count ~/ 5).clamp(1, count);
 
@@ -185,7 +172,7 @@ class _SpendChartViewState extends State<SpendChartView> {
               padding: const EdgeInsets.only(right: 6),
               child: Text(
                 _fmtAmount(value),
-                style: TextStyle(color: _muted, fontSize: 10),
+                style: TextStyle(color: c.secondaryText, fontSize: 10),
               ),
             );
           },
@@ -203,7 +190,7 @@ class _SpendChartViewState extends State<SpendChartView> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 _fmtBucketLabel(data.bucketDates[i], data.resolution),
-                style: TextStyle(color: _muted, fontSize: 10),
+                style: TextStyle(color: c.secondaryText, fontSize: 10),
               ),
             );
           },
@@ -215,7 +202,7 @@ class _SpendChartViewState extends State<SpendChartView> {
     );
   }
 
-  LineTouchData _touchData(SpendChartData data) {
+  LineTouchData _touchData(SpendChartData data, AppColorsBase c) {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
         fitInsideHorizontally: true,
@@ -223,7 +210,7 @@ class _SpendChartViewState extends State<SpendChartView> {
         tooltipRoundedRadius: 10,
         tooltipPadding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        getTooltipColor: (_) => const Color(0xFF1A1A1A),
+        getTooltipColor: (_) => c.surfaceTintHigh,
         getTooltipItems: (touchedSpots) {
           return touchedSpots.map((spot) {
             final i = spot.x.toInt();
@@ -233,7 +220,7 @@ class _SpendChartViewState extends State<SpendChartView> {
             return LineTooltipItem(
               '$dateLabel\n₹${_fmtAmount(spot.y)}',
               TextStyle(
-                color: spot.bar.color ?? _gold,
+                color: spot.bar.color ?? c.accentPrimary,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -246,7 +233,7 @@ class _SpendChartViewState extends State<SpendChartView> {
         return spotIndexes.map((_) {
           return TouchedSpotIndicatorData(
             FlLine(
-              color: _gold.withValues(alpha: 0.3),
+              color: c.borderSubtle,
               strokeWidth: 1,
               dashArray: [4, 4],
             ),
@@ -255,7 +242,7 @@ class _SpendChartViewState extends State<SpendChartView> {
               getDotPainter: (spot, percent, bar, index) =>
                   FlDotCirclePainter(
                 radius: 4,
-                color: bar.color ?? _gold,
+                color: bar.color ?? c.accentPrimary,
                 strokeWidth: 2,
                 strokeColor: Colors.black,
               ),
@@ -266,7 +253,7 @@ class _SpendChartViewState extends State<SpendChartView> {
     );
   }
 
-  Widget _buildLegend(SpendChartData data) {
+  Widget _buildLegend(SpendChartData data, AppColorsBase c) {
     final entries = data.categorySeries.entries
         .where((e) => !e.value.every((v) => v == 0))
         .toList();
@@ -275,7 +262,7 @@ class _SpendChartViewState extends State<SpendChartView> {
       spacing: 12,
       runSpacing: 6,
       children: entries.map((e) {
-        final color = categoryChartColors[e.key] ?? Colors.grey;
+        final color = c.categories.forCategory(e.key).base;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -286,7 +273,7 @@ class _SpendChartViewState extends State<SpendChartView> {
                   BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
-            Text(e.key, style: TextStyle(color: _muted, fontSize: 11)),
+            Text(e.key, style: TextStyle(color: c.secondaryText, fontSize: 11)),
           ],
         );
       }).toList(),
@@ -332,7 +319,7 @@ class _SpendChartViewState extends State<SpendChartView> {
     }
   }
 
-  Widget _buildSavingsChart(SpendChartData data) {
+  Widget _buildSavingsChart(SpendChartData data, AppColorsBase c) {
     final spots = <FlSpot>[];
     for (int i = 0; i < data.savingsSeries.length; i++) {
       spots.add(FlSpot(i.toDouble(), data.savingsSeries[i]));
@@ -404,15 +391,15 @@ class _SpendChartViewState extends State<SpendChartView> {
             ),
           ],
         ),
-        gridData: _gridData(),
-        titlesData: _savingsTitlesData(data),
+        gridData: _gridData(c),
+        titlesData: _savingsTitlesData(data, c),
         borderData: FlBorderData(show: false),
-        lineTouchData: _savingsTouchData(data),
+        lineTouchData: _savingsTouchData(data, c),
       ),
     );
   }
 
-  FlTitlesData _savingsTitlesData(SpendChartData data) {
+  FlTitlesData _savingsTitlesData(SpendChartData data, AppColorsBase c) {
     final count = data.savingsMonthlyDates.length;
     final interval = count <= 6 ? 1 : (count ~/ 5).clamp(1, count);
     return FlTitlesData(
@@ -428,7 +415,7 @@ class _SpendChartViewState extends State<SpendChartView> {
               padding: const EdgeInsets.only(right: 6),
               child: Text(
                 _fmtAmount(value),
-                style: TextStyle(color: _muted, fontSize: 10),
+                style: TextStyle(color: c.secondaryText, fontSize: 10),
               ),
             );
           },
@@ -448,7 +435,7 @@ class _SpendChartViewState extends State<SpendChartView> {
                 : '${_months[d.month - 1]} ${d.year.toString().substring(2)}';
             return Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(label, style: TextStyle(color: _muted, fontSize: 10)),
+              child: Text(label, style: TextStyle(color: c.secondaryText, fontSize: 10)),
             );
           },
         ),
@@ -458,14 +445,14 @@ class _SpendChartViewState extends State<SpendChartView> {
     );
   }
 
-  LineTouchData _savingsTouchData(SpendChartData data) {
+  LineTouchData _savingsTouchData(SpendChartData data, AppColorsBase c) {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
         fitInsideHorizontally: true,
         fitInsideVertically: true,
         tooltipRoundedRadius: 10,
         tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        getTooltipColor: (_) => const Color(0xFF1A1A1A),
+        getTooltipColor: (_) => c.surfaceTintHigh,
         getTooltipItems: (touchedSpots) {
           return touchedSpots.map((spot) {
             final i = spot.x.toInt();
@@ -527,27 +514,27 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gold = AppColors.dark.gold;
+    final c = AppColors.of(context);
     return Row(
       children: [
         _ToggleItem(
           label: 'Total',
           selected: mode == ChartMode.total,
-          color: gold,
+          color: c.expenseNegative,
           onTap: () => onChanged(ChartMode.total),
         ),
         const SizedBox(width: 8),
         _ToggleItem(
           label: 'By Category',
           selected: mode == ChartMode.byCategory,
-          color: gold,
+          color: c.accentPrimary,
           onTap: () => onChanged(ChartMode.byCategory),
         ),
         const SizedBox(width: 8),
         _ToggleItem(
           label: 'Savings',
           selected: mode == ChartMode.savings,
-          color: const Color(0xFF4CAF50),
+          color: c.incomePositive,
           onTap: () => onChanged(ChartMode.savings),
         ),
       ],
@@ -570,6 +557,7 @@ class _ToggleItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -578,13 +566,13 @@ class _ToggleItem extends StatelessWidget {
           color: selected ? color.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? color : Colors.white.withValues(alpha: 0.12),
+            color: selected ? color : c.borderSubtle,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? color : Colors.white.withValues(alpha: 0.6),
+            color: selected ? color : c.secondaryText,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
