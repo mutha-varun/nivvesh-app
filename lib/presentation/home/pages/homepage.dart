@@ -17,8 +17,17 @@ class HomePage extends ConsumerWidget {
       backgroundColor: c.background,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/bank'),
-        icon: const Icon(Icons.account_balance),
-        label: const Text('FDs'),
+        icon: Icon(Icons.account_balance, color: c.primaryText),
+        label: Text(
+          'FDs',
+          style: TextStyle(
+            color: c.primaryText,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: c.surfaceTintLow,
+        foregroundColor: c.primaryText,
+        elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       body: SafeArea(

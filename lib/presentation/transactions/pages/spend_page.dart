@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart' hide AppBar;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/application/transactions/search_provider.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
+import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_widgets.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_chart.dart';
 import 'package:nivvesh/presentation/transactions/widgets/alert_config_sheet.dart';
@@ -24,6 +26,15 @@ class HistoryPage extends ConsumerWidget {
     final search = ref.watch(transactionSearchProvider);
     final searchResults = ref.watch(searchResultsProvider);
     ref.watch(alertConfigProvider);
+
+    final typeFilteredTransactions =
+      _applyTransactionType(filtered.filteredTransactions, filterState);
+    final typeFilteredSearchResults =
+      _applyTransactionType(searchResults, filterState);
+    final typeFilteredCategoryGroups =
+      _groupByCategory(typeFilteredTransactions);
+    final typeFilteredPeriodAggregates =
+      _aggregateByPeriod(typeFilteredTransactions, filterState.periodType);
 
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
@@ -55,24 +66,25 @@ class HistoryPage extends ConsumerWidget {
           else ...[
             // Search bar sits above the chart — always visible
             const SliverToBoxAdapter(child: HistorySearchBar()),
+            const TransactionTypeFilterBar(),
             const SpendChart(),
             const FilterToolbar(),
             // List area: search results take priority over filter views
             if (search.isActive) ...[
-              if (searchResults.isEmpty)
+              if (typeFilteredSearchResults.isEmpty)
                 const SliverFillRemaining(child: EmptyState())
               else
-                AllTransactionsSliver(transactions: searchResults),
-            ] else if (filtered.filteredTransactions.isEmpty)
+                AllTransactionsSliver(transactions: typeFilteredSearchResults),
+            ] else if (typeFilteredTransactions.isEmpty)
               const SliverFillRemaining(child: EmptyState())
-            else if (!filterState.hasAnyNonDefault)
+            else if (!filterState.hasNonDefaultGrouping && !filterState.hasNonDefaultDateRange && !filterState.hasCategories)
               AllTransactionsSliver(
-                transactions: filtered.filteredTransactions,
+                transactions: typeFilteredTransactions,
               )
             else if (filterState.grouping == GroupingType.category)
-              CategoryGroupsSliver(groups: filtered.categoryGroups)
+              CategoryGroupsSliver(groups: typeFilteredCategoryGroups)
             else
-              PeriodSummarySliver(aggregates: filtered.periodAggregates),
+              PeriodSummarySliver(aggregates: typeFilteredPeriodAggregates),
           ],
         ],
       ),
@@ -88,6 +100,143 @@ class HistoryPage extends ConsumerWidget {
     );
   }
 
+}
+
+List<FinanceModel> _applyTransactionType(
+  List<FinanceModel> source,
+  FinanceFilterState filter,
+) {
+  switch (filter.transactionType) {
+    case TransactionType.all:
+      return source;
+    case TransactionType.income:
+      return source
+          .where((m) => m.category == PaymentCategories.creditCategory)
+          .toList();
+    case TransactionType.expenses:
+      return source
+          .where((m) => m.category != PaymentCategories.creditCategory)
+          .toList();
+  }
+}
+
+Map<String, List<FinanceModel>> _groupByCategory(List<FinanceModel> txns) {
+  final categoryGroups = <String, List<FinanceModel>>{};
+  for (final m in txns) {
+    categoryGroups.putIfAbsent(m.category, () => []).add(m);
+  }
+  return categoryGroups;
+}
+
+List<PeriodAggregate> _aggregateByPeriod(
+  List<FinanceModel> txns,
+  PeriodType periodType,
+) {
+  final buckets = <String, _PeriodBucket>{};
+  for (final m in txns) {
+    final key = _periodKey(m.date, periodType);
+    final bucket = buckets.putIfAbsent(
+      key,
+      () => _PeriodBucket(
+        label: _periodLabel(m.date, periodType),
+        periodStart: _computePeriodStart(m.date, periodType),
+      ),
+    );
+    bucket.total += m.amount;
+    bucket.count += 1;
+  }
+
+  final periodAggregates = buckets.entries
+      .map((e) => PeriodAggregate(
+            label: e.value.label,
+            sortKey: e.key,
+            total: e.value.total,
+            count: e.value.count,
+            periodStart: e.value.periodStart,
+            periodEnd: _computePeriodEnd(e.value.periodStart, periodType),
+          ))
+      .toList()
+    ..sort((a, b) => b.sortKey.compareTo(a.sortKey));
+
+  return periodAggregates;
+}
+
+String _periodKey(DateTime date, PeriodType type) {
+  switch (type) {
+    case PeriodType.weekly:
+      final week = ((date.day - 1) ~/ 7) + 1;
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-W$week';
+    case PeriodType.monthly:
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}';
+    case PeriodType.yearly:
+      return '${date.year}';
+  }
+}
+
+String _periodLabel(DateTime date, PeriodType type) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  switch (type) {
+    case PeriodType.weekly:
+      final week = ((date.day - 1) ~/ 7) + 1;
+      return 'Week $week - ${months[date.month - 1]} ${date.year}';
+    case PeriodType.monthly:
+      return '${months[date.month - 1]} ${date.year}';
+    case PeriodType.yearly:
+      return '${date.year}';
+  }
+}
+
+DateTime _computePeriodStart(DateTime date, PeriodType type) {
+  switch (type) {
+    case PeriodType.weekly:
+      final startDay = ((date.day - 1) ~/ 7) * 7 + 1;
+      return DateTime(date.year, date.month, startDay);
+    case PeriodType.monthly:
+      return DateTime(date.year, date.month, 1);
+    case PeriodType.yearly:
+      return DateTime(date.year, 1, 1);
+  }
+}
+
+DateTime _computePeriodEnd(DateTime start, PeriodType type) {
+  switch (type) {
+    case PeriodType.weekly:
+      final tentative =
+          DateTime(start.year, start.month, start.day + 6, 23, 59, 59);
+      final monthEnd = _lastDayOfMonthEnd(start.year, start.month);
+      return tentative.isAfter(monthEnd) ? monthEnd : tentative;
+    case PeriodType.monthly:
+      return _lastDayOfMonthEnd(start.year, start.month);
+    case PeriodType.yearly:
+      return DateTime(start.year, 12, 31, 23, 59, 59);
+  }
+}
+
+DateTime _lastDayOfMonthEnd(int year, int month) {
+  final firstOfNext = DateTime(year, month + 1, 1);
+  return firstOfNext.subtract(const Duration(seconds: 1));
+}
+
+class _PeriodBucket {
+  final String label;
+  final DateTime periodStart;
+  double total = 0;
+  int count = 0;
+
+  _PeriodBucket({required this.label, required this.periodStart});
 }
 
 class _PasswordPrompt extends StatelessWidget {

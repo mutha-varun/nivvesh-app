@@ -605,6 +605,74 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+class TransactionTypeFilterBar extends ConsumerWidget {
+  const TransactionTypeFilterBar({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(filterProvider);
+    final c = AppColors.of(context);
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: SizedBox(
+        height: 44,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Row(
+          children: TransactionType.values.map((type) {
+            final selected = filter.transactionType == type;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () {
+                  ref.read(filterProvider.notifier).state =
+                      filter.copyWith(transactionType: type);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected ? c.primaryText : c.surfaceTintLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selected ? Colors.transparent : c.borderSubtle,
+                    ),
+                  ),
+                  child: Text(
+                    _label(type),
+                    style: TextStyle(
+                      color: selected ? c.background : c.secondaryText,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  String _label(TransactionType type) {
+    switch (type) {
+      case TransactionType.all:
+        return 'All';
+      case TransactionType.income:
+        return 'Income';
+      case TransactionType.expenses:
+        return 'Expenses';
+    }
+  }
+}
+
 class FilterToolbar extends ConsumerWidget {
   const FilterToolbar({super.key});
 
@@ -661,6 +729,17 @@ class FilterToolbar extends ConsumerWidget {
       ));
     }
 
+    if (filter.hasNonDefaultTransactionType) {
+      chips.add(_ReadOnlyChip(
+        icon: Icons.account_balance_wallet_rounded,
+        label: switch (filter.transactionType) {
+          TransactionType.income => 'Income',
+          TransactionType.expenses => 'Expenses',
+          TransactionType.all => 'All',
+        },
+      ));
+    }
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -696,7 +775,6 @@ class TopFilterSheet extends ConsumerWidget {
     PaymentCategories.bills,
     PaymentCategories.health,
     PaymentCategories.investment,
-    PaymentCategories.creditCategory,
     PaymentCategories.uncategorized,
   ];
 

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum GroupingType { category, period }
 enum PeriodType { weekly, monthly, yearly }
+enum TransactionType { all, income, expenses }
 
 FinanceFilterState defaultFilter() {
   final now = DateTime.now();
@@ -18,6 +19,7 @@ class FinanceFilterState {
   final Set<String> selectedCategories;
   final GroupingType grouping;
   final PeriodType periodType;
+  final TransactionType transactionType;
 
   FinanceFilterState({
     required this.dateFrom,
@@ -25,6 +27,7 @@ class FinanceFilterState {
     this.selectedCategories = const {},
     this.grouping = GroupingType.category,
     this.periodType = PeriodType.weekly,
+    this.transactionType = TransactionType.all,
   });
 
   bool get hasNonDefaultDateRange {
@@ -41,10 +44,14 @@ class FinanceFilterState {
 
   bool get hasNonDefaultGrouping => grouping != GroupingType.category;
 
+  bool get hasNonDefaultTransactionType =>
+      transactionType != TransactionType.all;
+
   bool get hasAnyNonDefault =>
       hasNonDefaultDateRange ||
       hasCategories ||
       hasNonDefaultGrouping ||
+      hasNonDefaultTransactionType ||
       (grouping == GroupingType.period && periodType != PeriodType.weekly);
 
   FinanceFilterState copyWith({
@@ -53,6 +60,7 @@ class FinanceFilterState {
     Set<String>? selectedCategories,
     GroupingType? grouping,
     PeriodType? periodType,
+    TransactionType? transactionType,
   }) {
     return FinanceFilterState(
       dateFrom: dateFrom ?? this.dateFrom,
@@ -60,6 +68,7 @@ class FinanceFilterState {
       selectedCategories: selectedCategories ?? this.selectedCategories,
       grouping: grouping ?? this.grouping,
       periodType: periodType ?? this.periodType,
+      transactionType: transactionType ?? this.transactionType,
     );
   }
 }
