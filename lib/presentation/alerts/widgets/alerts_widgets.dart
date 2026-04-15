@@ -182,7 +182,7 @@ class CategoryLimitSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final max = kLimitMax[category] ?? 50000.0;
-    final isSet = limit > 0;
+    final displayLabel = _labelFor(category);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -193,19 +193,19 @@ class CategoryLimitSlider extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  category,
+                  displayLabel,
                   style: TextStyle(
                     color: c.primaryText,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
               Text(
-                isSet ? '₹${_fmt(limit)}' : 'No limit',
+                '₹${_formatInr(limit)}',
                 style: TextStyle(
-                  color: isSet ? c.gold : c.muted,
-                  fontSize: 13,
+                  color: c.primaryText,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -214,13 +214,13 @@ class CategoryLimitSlider extends StatelessWidget {
           const SizedBox(height: 6),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-              activeTrackColor: c.gold,
-              inactiveTrackColor: c.muted.withValues(alpha: 0.2),
-              thumbColor: c.gold,
-              overlayColor: c.gold.withValues(alpha: 0.12),
+              trackHeight: 6,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+              activeTrackColor: c.accentPrimary,
+              inactiveTrackColor: c.surfaceContainerHigh,
+              thumbColor: c.accentPrimary,
+              overlayColor: c.accentPrimary.withValues(alpha: 0.12),
             ),
             child: Slider(
               value: limit.clamp(0, max),
@@ -234,7 +234,7 @@ class CategoryLimitSlider extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('₹0', style: TextStyle(color: c.muted, fontSize: 10)),
-              Text('₹${_fmt(max)}', style: TextStyle(color: c.muted, fontSize: 10)),
+              Text('₹${_formatInr(max)}', style: TextStyle(color: c.muted, fontSize: 10)),
             ],
           ),
         ],
@@ -242,12 +242,41 @@ class CategoryLimitSlider extends StatelessWidget {
     );
   }
 
-  static String _fmt(double v) {
-    final n = v.round();
-    if (n >= 1000) {
-      return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
+  static String _labelFor(String category) {
+    switch (category) {
+      case PaymentCategories.food:
+        return 'Food & Dining';
+      case PaymentCategories.shopping:
+        return 'Shopping';
+      case PaymentCategories.entertainment:
+        return 'Entertainment';
+      case PaymentCategories.transport:
+        return 'Transport';
+      case PaymentCategories.bills:
+        return 'Bills';
+      case PaymentCategories.health:
+        return 'Health';
+      default:
+        return category;
     }
-    return n.toString();
+  }
+
+  static String _formatInr(double amount) {
+    final rounded = amount.round().abs();
+    final raw = rounded.toString();
+    if (raw.length <= 3) return raw;
+
+    final lastThree = raw.substring(raw.length - 3);
+    var rest = raw.substring(0, raw.length - 3);
+    final parts = <String>[];
+
+    while (rest.length > 2) {
+      parts.insert(0, rest.substring(rest.length - 2));
+      rest = rest.substring(0, rest.length - 2);
+    }
+    if (rest.isNotEmpty) parts.insert(0, rest);
+
+    return '${parts.join(',')},$lastThree';
   }
 }
 
