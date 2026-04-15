@@ -4,6 +4,7 @@ import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/core/theme/app_theme.dart';
+import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/filter_finance_provider.dart';
 import 'package:nivvesh/presentation/transactions/pages/period_detail_page.dart';
@@ -574,32 +575,35 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: c.surfaceContainerLow,
-              shape: BoxShape.circle,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: c.surfaceContainerLow,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.inbox_rounded, size: 48, color: c.secondaryText),
             ),
-            child: Icon(Icons.inbox_rounded, size: 48, color: c.secondaryText),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No transactions found',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: c.primaryText,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Pull to sync or tap the button below',
-            style: TextStyle(color: c.secondaryText, fontSize: 13),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(
+              'No transactions found',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: c.primaryText,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pull to sync or tap the button below',
+              style: TextStyle(color: c.secondaryText, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1238,4 +1242,166 @@ class PeriodSummarySliver extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shows per-category spending vs limit for any category that has a limit set
+/// and has been spent ≥ 50% of the limit in the current transactions set.
+class CategoryLimitProgressSliver extends ConsumerWidget {
+  const CategoryLimitProgressSliver({super.key, required this.transactions});
+
+  final List<FinanceModel> transactions;
+
+  static const _tracked = [
+    PaymentCategories.food,
+    PaymentCategories.shopping,
+    PaymentCategories.transport,
+    PaymentCategories.entertainment,
+    PaymentCategories.bills,
+    PaymentCategories.health,
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(alertConfigProvider);
+    final c = AppColors.of(context);
+
+    // sum spending per tracked category from current transaction list
+    final spent = <String, double>{};
+    for (final cat in _tracked) {
+      spent[cat] = transactions
+          .where((m) => m.category == cat)
+          .fold(0.0, (s, m) => s + m.amount);
+    }
+
+    final rows = <_LimitRow>[];
+    for (final cat in _tracked) {
+      final limit = config.getCategoryLimit(cat);
+      if (limit <= 0) continue;
+      final used = spent[cat] ?? 0;
+      if (used < limit * 0.5) continue; // only show when ≥ 50% used
+      rows.add(_LimitRow(category: cat, spent: used, limit: limit));
+    }
+
+    if (rows.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: c.surfaceTintLow,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: c.borderSubtle),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.speed_rounded, size: 14, color: c.secondaryText),
+                  const SizedBox(width: 6),
+                  Text(
+                    'EXPENSE LIMITS',
+                    style: TextStyle(
+                      color: c.secondaryText,
+                      fontSize: 10,
+                      letterSpacing: 1.4,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...rows.map((r) => _LimitProgressTile(row: r, colors: c)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LimitRow {
+  const _LimitRow({
+    required this.category,
+    required this.spent,
+    required this.limit,
+  });
+  final String category;
+  final double spent;
+  final double limit;
+}
+
+class _LimitProgressTile extends StatelessWidget {
+  const _LimitProgressTile({required this.row, required this.colors});
+
+  final _LimitRow row;
+  final AppColorsBase colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = (row.spent / row.limit).clamp(0.0, 1.0);
+    final pct = (ratio * 100).round();
+    final isOver = row.spent >= row.limit;
+    final isWarning = pct >= 80;
+
+    final barColor = isOver
+        ? colors.expenseNegative
+        : isWarning
+            ? const Color(0xFFFFB74D)
+            : colors.incomePositive;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  row.category,
+                  style: TextStyle(
+                    color: colors.primaryText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (isOver)
+                Icon(Icons.warning_amber_rounded,
+                    size: 14, color: colors.expenseNegative),
+              const SizedBox(width: 4),
+              Text(
+                '₹${_fmt(row.spent)} / ₹${_fmt(row.limit)}',
+                style: TextStyle(
+                  color: isOver ? colors.expenseNegative : colors.primaryText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$pct%',
+                style: TextStyle(color: colors.secondaryText, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 5,
+              backgroundColor: colors.borderSubtle,
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _fmt(double v) => _formatInr(v);
 }

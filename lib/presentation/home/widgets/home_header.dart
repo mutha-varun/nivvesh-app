@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
-import 'package:nivvesh/presentation/transactions/widgets/alert_config_sheet.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
@@ -58,14 +58,7 @@ class _BellButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const AlertConfigSheet(),
-        );
-      },
+      onTap: () => context.go('/alerts'),
       child: Container(
         width: 40,
         height: 40,

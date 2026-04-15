@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart' hide AppBar;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/application/transactions/filter_provider.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
@@ -12,7 +13,6 @@ import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_widgets.dart';
 import 'package:nivvesh/presentation/transactions/widgets/spend_chart.dart';
-import 'package:nivvesh/presentation/transactions/widgets/alert_config_sheet.dart';
 import 'package:nivvesh/presentation/transactions/widgets/history_search_bar.dart';
 
 class HistoryPage extends ConsumerWidget {
@@ -43,7 +43,7 @@ class HistoryPage extends ConsumerWidget {
           AppBar(
             onRefresh: Platform.isIOS ? ctrl.uploadPdf : ctrl.fetchMessages,
             isLoading: ctrl.isLoading,
-            onAlertTap: () => _openAlertConfig(context),
+            onAlertTap: () => context.go('/alerts'),
             actionIcon: Platform.isIOS
                 ? Icons.upload_file_rounded
                 : Icons.refresh_rounded,
@@ -69,6 +69,7 @@ class HistoryPage extends ConsumerWidget {
             const TransactionTypeFilterBar(),
             const SpendChart(),
             const FilterToolbar(),
+            CategoryLimitProgressSliver(transactions: typeFilteredTransactions),
             // List area: search results take priority over filter views
             if (search.isActive) ...[
               if (typeFilteredSearchResults.isEmpty)
@@ -88,15 +89,6 @@ class HistoryPage extends ConsumerWidget {
           ],
         ],
       ),
-    );
-  }
-
-  void _openAlertConfig(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const AlertConfigSheet(),
     );
   }
 

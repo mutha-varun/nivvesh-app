@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/alert_config.dart';
+import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/core/theme/app_theme.dart';
 
@@ -160,6 +161,32 @@ class _AlertConfigSheetState extends ConsumerState<AlertConfigSheet> {
                       },
                     )),
 
+              const SizedBox(height: 24),
+
+              // --- Category limits ---
+              Text(
+                'CATEGORY LIMITS',
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 11,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Set a monthly spending limit per category.',
+                style: TextStyle(color: _muted, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              ..._kLimitCategories.map((cat) => _CategoryLimitSlider(
+                    category: cat,
+                    limit: config.getCategoryLimit(cat),
+                    onChanged: (val) {
+                      ref.read(alertConfigProvider).setCategoryLimit(cat, val);
+                    },
+                  )),
+
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -251,6 +278,106 @@ class _ThresholdTile extends StatelessWidget {
     if (percent >= 90) return const Color(0xFFFF5252);
     if (percent >= 70) return const Color(0xFFFFB74D);
     return AppColors.dark.gold;
+  }
+}
+
+const _kLimitCategories = [
+  PaymentCategories.food,
+  PaymentCategories.shopping,
+  PaymentCategories.transport,
+  PaymentCategories.entertainment,
+  PaymentCategories.bills,
+  PaymentCategories.health,
+];
+
+// Max slider value for each category (₹)
+const _kLimitMax = {
+  PaymentCategories.food: 50000.0,
+  PaymentCategories.shopping: 50000.0,
+  PaymentCategories.transport: 30000.0,
+  PaymentCategories.entertainment: 20000.0,
+  PaymentCategories.bills: 30000.0,
+  PaymentCategories.health: 30000.0,
+};
+
+class _CategoryLimitSlider extends StatelessWidget {
+  const _CategoryLimitSlider({
+    required this.category,
+    required this.limit,
+    required this.onChanged,
+  });
+
+  final String category;
+  final double limit;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final max = _kLimitMax[category] ?? 50000.0;
+    final isSet = limit > 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  category,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Text(
+                isSet ? '₹${_fmt(limit)}' : 'No limit',
+                style: TextStyle(
+                  color: isSet ? AppColors.dark.gold : AppColors.dark.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              activeTrackColor: AppColors.dark.gold,
+              inactiveTrackColor: AppColors.dark.muted.withValues(alpha: 0.2),
+              thumbColor: AppColors.dark.gold,
+              overlayColor: AppColors.dark.gold.withValues(alpha: 0.12),
+            ),
+            child: Slider(
+              value: limit.clamp(0, max),
+              min: 0,
+              max: max,
+              divisions: (max / 500).round(),
+              onChanged: onChanged,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('₹0', style: TextStyle(color: AppColors.dark.muted, fontSize: 10)),
+              Text('₹${_fmt(max)}', style: TextStyle(color: AppColors.dark.muted, fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _fmt(double v) {
+    final n = v.round();
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
+    return n.toString();
   }
 }
 

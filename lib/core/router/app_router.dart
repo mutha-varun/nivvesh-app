@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
+import 'package:nivvesh/presentation/alerts/alerts_page.dart';
 import 'package:nivvesh/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
@@ -94,8 +95,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/alerts',
-                builder: (context, state) =>
-                    const ComingSoonPage(tabName: 'Alerts'),
+                builder: (context, state) => const AlertsPage(),
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// SharedPreferences keys — also read by the background SMS handler.
 const kSpendAlertThresholds = 'spend_alert_thresholds';
 const kUserSalary = 'user_salary';
+const _kCategoryLimitPrefix = 'category_limit_';
 
 final alertConfigProvider =
     ChangeNotifierProvider<AlertConfigController>((ref) {
@@ -15,10 +16,15 @@ class AlertConfigController extends ChangeNotifier {
   List<int> _thresholds = [];
   double _salary = 0;
   bool _loaded = false;
+  final Map<String, double> _categoryLimits = {};
 
   List<int> get thresholds => List.unmodifiable(_thresholds);
   double get salary => _salary;
   bool get loaded => _loaded;
+  Map<String, double> get categoryLimits => Map.unmodifiable(_categoryLimits);
+
+  double getCategoryLimit(String category) =>
+      _categoryLimits[category] ?? 0;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -36,6 +42,14 @@ class AlertConfigController extends ChangeNotifier {
       // Sensible defaults matching the old hardcoded behaviour
       _thresholds = [50, 80];
       await _saveThresholds();
+    }
+
+    // Load per-category limits
+    for (final key in prefs.getKeys()) {
+      if (key.startsWith(_kCategoryLimitPrefix)) {
+        final category = key.substring(_kCategoryLimitPrefix.length);
+        _categoryLimits[category] = prefs.getDouble(key) ?? 0;
+      }
     }
 
     _loaded = true;
@@ -57,6 +71,14 @@ class AlertConfigController extends ChangeNotifier {
     // Also clean up the alerted flag so it doesn't linger
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('bg_alerted_$percent');
+    notifyListeners();
+  }
+
+  Future<void> setCategoryLimit(String category, double amount) async {
+    if (amount < 0) return;
+    _categoryLimits[category] = amount;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('$_kCategoryLimitPrefix$category', amount);
     notifyListeners();
   }
 
