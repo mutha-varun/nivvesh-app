@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/alert_config.dart';
-import 'package:nivvesh/core/constants/payment_category.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
+import 'package:nivvesh/presentation/alerts/widgets/alerts_widgets.dart';
 
 class AlertsPage extends ConsumerStatefulWidget {
   const AlertsPage({super.key});
@@ -39,8 +39,7 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
     ref.listen<AlertConfigController>(alertConfigProvider, (_, next) {
       if (_salaryCtrl.text.isEmpty && next.salary > 0) {
         _salaryCtrl.text = next.salary.toStringAsFixed(0);
-        _salaryCtrl.selection =
-            TextSelection.collapsed(offset: _salaryCtrl.text.length);
+        _salaryCtrl.selection = TextSelection.collapsed(offset: _salaryCtrl.text.length);
       }
     });
 
@@ -53,546 +52,129 @@ class _AlertsPageState extends ConsumerState<AlertsPage> {
               padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomInset),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: c.surfaceTintMid,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.borderSubtle),
-                      ),
-                      child: Icon(
-                        Icons.notifications_none_rounded,
-                        color: c.secondaryText,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Alerts & Limits',
-                            style: TextStyle(
-                              color: c.primaryText,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Manage your notifications',
-                            style: TextStyle(
-                              color: c.muted,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                _SectionLabel('SMART ALERTS', c),
-                const SizedBox(height: 12),
-                _SmartAlertCard(
-                  icon: Icons.warning_amber_rounded,
-                  title: '80% Salary Used',
-                  message:
-                      'You\'ve used 80% of your salary. You have ₹16,000 left for the next 12 days until payday.',
-                  time: '2 hours ago',
-                  accent: const Color(0xFFF59E0B),
-                ),
-                const SizedBox(height: 12),
-                _SmartAlertCard(
-                  icon: Icons.trending_up_rounded,
-                  title: 'Great Savings!',
-                  message:
-                      'You saved 20% more this month compared to last month. Keep up the good work!',
-                  time: '1 day ago',
-                  accent: c.incomePositive,
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(child: _SectionLabel('EXPENSE LIMITS', c)),
-                    Icon(Icons.tune_rounded, color: c.muted, size: 16),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: c.surfaceTintLow,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: c.borderSubtle),
+                  const AlertsHeader(),
+                  const SizedBox(height: 24),
+                  SectionLabel('SMART ALERTS', colors: c),
+                  const SizedBox(height: 12),
+                  const SmartAlertCard(
+                    icon: Icons.warning_amber_rounded,
+                    title: '80% Salary Used',
+                    message:
+                        'You\'ve used 80% of your salary. You have ₹16,000 left for the next 12 days until payday.',
+                    time: '2 hours ago',
+                    accent: Color(0xFFF59E0B),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 12),
+                  SmartAlertCard(
+                    icon: Icons.trending_up_rounded,
+                    title: 'Great Savings!',
+                    message:
+                        'You saved 20% more this month compared to last month. Keep up the good work!',
+                    time: '1 day ago',
+                    accent: c.incomePositive,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
                     children: [
-                      _SectionLabel('MONTHLY INCOME', c),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _salaryCtrl,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        style: TextStyle(color: c.primaryText, fontSize: 16),
-                        decoration: InputDecoration(
-                          prefixText: '₹ ',
-                          prefixStyle: TextStyle(color: c.gold, fontSize: 16),
-                          hintText: 'e.g. 50000',
-                          hintStyle:
-                              TextStyle(color: c.muted.withValues(alpha: 0.5)),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide:
-                                BorderSide(color: c.gold.withValues(alpha: 0.26)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: c.gold),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
-                        ),
-                        onChanged: (val) {
-                          final parsed = double.tryParse(val);
-                          if (parsed != null) {
-                            ref.read(alertConfigProvider).setSalary(parsed);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Expanded(child: _SectionLabel('ALERT THRESHOLDS', c)),
-                          _AddThresholdButton(onAdd: (percent) {
-                            ref.read(alertConfigProvider).addThreshold(percent);
-                          }),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      if (config.thresholds.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: Text(
-                              'No alerts set. Tap + to add one.',
-                              style: TextStyle(color: c.muted, fontSize: 13),
+                      Expanded(child: SectionLabel('EXPENSE LIMITS', colors: c)),
+                      Icon(Icons.tune_rounded, color: c.muted, size: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: c.surfaceTintLow,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: c.borderSubtle),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SectionLabel('MONTHLY INCOME', colors: c),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _salaryCtrl,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          style: TextStyle(color: c.primaryText, fontSize: 16),
+                          decoration: InputDecoration(
+                            prefixText: '₹ ',
+                            prefixStyle: TextStyle(color: c.gold, fontSize: 16),
+                            hintText: 'e.g. 50000',
+                            hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.5)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: c.gold.withValues(alpha: 0.26)),
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: c.gold),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                           ),
-                        )
-                      else
-                        ...config.thresholds.map((percent) => _ThresholdTile(
+                          onChanged: (val) {
+                            final parsed = double.tryParse(val);
+                            if (parsed != null) {
+                              ref.read(alertConfigProvider).setSalary(parsed);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(child: SectionLabel('ALERT THRESHOLDS', colors: c)),
+                            AddThresholdButton(onAdd: (percent) {
+                              ref.read(alertConfigProvider).addThreshold(percent);
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (config.thresholds.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: Text(
+                                'No alerts set. Tap + to add one.',
+                                style: TextStyle(color: c.muted, fontSize: 13),
+                              ),
+                            ),
+                          )
+                        else
+                          ...config.thresholds.map(
+                            (percent) => ThresholdTile(
                               percent: percent,
                               salary: config.salary,
                               onDelete: () {
-                                ref
-                                    .read(alertConfigProvider)
-                                    .removeThreshold(percent);
+                                ref.read(alertConfigProvider).removeThreshold(percent);
                               },
-                            )),
-                      const SizedBox(height: 16),
-
-                      _SectionLabel('CATEGORY LIMITS', c),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Set a monthly spending limit per category.',
-                        style:
-                            TextStyle(color: c.muted, fontSize: 12, height: 1.4),
-                      ),
-                      const SizedBox(height: 12),
-                      ..._kLimitCategories.map((cat) => _CategoryLimitSlider(
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        SectionLabel('CATEGORY LIMITS', colors: c),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Set a monthly spending limit per category.',
+                          style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+                        ),
+                        const SizedBox(height: 12),
+                        ...kLimitCategories.map(
+                          (cat) => CategoryLimitSlider(
                             category: cat,
                             limit: config.getCategoryLimit(cat),
                             onChanged: (val) {
                               ref.read(alertConfigProvider).setCategoryLimit(cat, val);
                             },
-                          )),
-                    ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ]),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SmartAlertCard extends StatelessWidget {
-  const _SmartAlertCard({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.accent,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final String time;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: accent.withValues(alpha: 0.2),
-            ),
-            child: Icon(icon, color: accent, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: c.primaryText,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(color: c.muted, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Shared helpers ────────────────────────────────────────────────────────────
-
-const _kLimitCategories = [
-  PaymentCategories.food,
-  PaymentCategories.shopping,
-  PaymentCategories.transport,
-  PaymentCategories.entertainment,
-  PaymentCategories.bills,
-  PaymentCategories.health,
-];
-
-const _kLimitMax = {
-  PaymentCategories.food: 50000.0,
-  PaymentCategories.shopping: 50000.0,
-  PaymentCategories.transport: 30000.0,
-  PaymentCategories.entertainment: 20000.0,
-  PaymentCategories.bills: 30000.0,
-  PaymentCategories.health: 30000.0,
-};
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text, this.colors);
-  final String text;
-  final AppColorsBase colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: colors.secondaryText,
-        fontSize: 11,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _CategoryLimitSlider extends StatelessWidget {
-  const _CategoryLimitSlider({
-    required this.category,
-    required this.limit,
-    required this.onChanged,
-  });
-
-  final String category;
-  final double limit;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    final max = _kLimitMax[category] ?? 50000.0;
-    final isSet = limit > 0;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  category,
-                  style: TextStyle(
-                    color: c.primaryText,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Text(
-                isSet ? '₹${_fmt(limit)}' : 'No limit',
-                style: TextStyle(
-                  color: isSet ? c.gold : c.muted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape:
-                  const RoundSliderOverlayShape(overlayRadius: 14),
-                activeTrackColor: c.gold,
-                inactiveTrackColor: c.muted.withValues(alpha: 0.2),
-                thumbColor: c.gold,
-                overlayColor: c.gold.withValues(alpha: 0.12),
-            ),
-            child: Slider(
-              value: limit.clamp(0, max),
-              min: 0,
-              max: max,
-              divisions: (max / 500).round(),
-              onChanged: onChanged,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('₹0',
-                  style: TextStyle(color: c.muted, fontSize: 10)),
-              Text('₹${_fmt(max)}',
-                  style: TextStyle(color: c.muted, fontSize: 10)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static String _fmt(double v) {
-    final n = v.round();
-    if (n >= 1000) {
-      return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
-    }
-    return n.toString();
-  }
-}
-
-class _ThresholdTile extends StatelessWidget {
-  const _ThresholdTile({
-    required this.percent,
-    required this.salary,
-    required this.onDelete,
-  });
-
-  final int percent;
-  final double salary;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    final amountStr = salary > 0
-        ? '₹${(salary * percent / 100).toStringAsFixed(0)}'
-        : '';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: c.gold.withValues(alpha: 0.18),
-          ),
-          color: c.surfaceTintLow,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.notifications_active_rounded,
-                color: _iconColor(percent, c.gold), size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$percent% of income',
-                    style: TextStyle(
-                      color: c.primaryText,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (amountStr.isNotEmpty)
-                    Text(
-                      'Triggers at $amountStr',
-                      style: TextStyle(color: c.muted, fontSize: 12),
-                    ),
-                ],
-              ),
-            ),
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onDelete,
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Icon(Icons.close_rounded,
-                    color: c.muted, size: 18),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Color _iconColor(int percent, Color defaultColor) {
-    if (percent >= 90) return const Color(0xFFFF5252);
-    if (percent >= 70) return const Color(0xFFFFB74D);
-    return defaultColor;
-  }
-}
-
-class _AddThresholdButton extends StatelessWidget {
-  const _AddThresholdButton({required this.onAdd});
-  final void Function(int) onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _showPicker(context),
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.gold.withValues(alpha: 0.30)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add_rounded, color: c.gold, size: 16),
-            const SizedBox(width: 4),
-            Text(
-              'Add',
-              style: TextStyle(
-                color: c.gold,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPicker(BuildContext context) {
-    final c = AppColors.of(context);
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: c.cardSurface,
-        title: Text('Add Alert',
-            style: TextStyle(color: c.primaryText, fontSize: 16)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: TextStyle(color: c.primaryText),
-          decoration: InputDecoration(
-            suffixText: '%',
-            suffixStyle: TextStyle(color: c.muted),
-            hintText: 'e.g. 75',
-            hintStyle: TextStyle(
-                color: c.muted.withValues(alpha: 0.5)),
-            enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: c.gold)),
-          ),
-          onSubmitted: (val) {
-            final percent = int.tryParse(val);
-            if (percent != null && percent > 0 && percent <= 100) {
-              onAdd(percent);
-            }
-            Navigator.pop(ctx);
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final percent = int.tryParse(controller.text);
-              if (percent != null &&
-                  percent > 0 &&
-                  percent <= 100) {
-                onAdd(percent);
-              }
-              Navigator.pop(ctx);
-            },
-            child: Text('Add',
-                style: TextStyle(color: c.gold)),
-          ),
-        ],
       ),
     );
   }
