@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// SharedPreferences keys — also read by the background SMS handler.
 const kSpendAlertThresholds = 'spend_alert_thresholds';
-const kUserSalary = 'user_salary';
+const kMonthlyIncome = 'bg_monthly_income';
 const _kCategoryLimitPrefix = 'category_limit_';
 
 final alertConfigProvider =
@@ -14,12 +14,15 @@ final alertConfigProvider =
 
 class AlertConfigController extends ChangeNotifier {
   List<int> _thresholds = [];
-  double _salary = 0;
+  double _monthlyIncome = 0;
   bool _loaded = false;
   final Map<String, double> _categoryLimits = {};
 
   List<int> get thresholds => List.unmodifiable(_thresholds);
-  double get salary => _salary;
+
+  /// Monthly income derived from credit transactions tracked by the SMS handler.
+  double get monthlyIncome => _monthlyIncome;
+
   bool get loaded => _loaded;
   Map<String, double> get categoryLimits => Map.unmodifiable(_categoryLimits);
 
@@ -28,7 +31,7 @@ class AlertConfigController extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    _salary = prefs.getDouble(kUserSalary) ?? 0;
+    _monthlyIncome = prefs.getDouble(kMonthlyIncome) ?? 0;
 
     final raw = prefs.getString(kSpendAlertThresholds);
     if (raw != null && raw.isNotEmpty) {
@@ -79,14 +82,6 @@ class AlertConfigController extends ChangeNotifier {
     _categoryLimits[category] = amount;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('$_kCategoryLimitPrefix$category', amount);
-    notifyListeners();
-  }
-
-  Future<void> setSalary(double value) async {
-    if (value < 0) return;
-    _salary = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(kUserSalary, value);
     notifyListeners();
   }
 

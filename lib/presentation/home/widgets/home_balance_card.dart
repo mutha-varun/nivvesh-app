@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/home/home_summary_provider.dart';
-import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
 class HomeBalanceCard extends ConsumerWidget {
@@ -51,7 +49,13 @@ class HomeBalanceCard extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: _IncomeEditorTile(income: summary.monthIncome),
+                      child: _MoneyTile(
+                        label: 'Income',
+                        value: _formatAmount(summary.monthIncome),
+                        icon: Icons.arrow_downward_rounded,
+                        iconColor: c.incomePositive,
+                        iconBg: c.categories.emerald.tint20,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -134,141 +138,6 @@ class _MoneyTile extends StatelessWidget {
   }
 }
 
-class _IncomeEditorTile extends ConsumerStatefulWidget {
-  const _IncomeEditorTile({required this.income});
-
-  final double income;
-
-  @override
-  ConsumerState<_IncomeEditorTile> createState() => _IncomeEditorTileState();
-}
-
-class _IncomeEditorTileState extends ConsumerState<_IncomeEditorTile> {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  bool _editing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (!_focusNode.hasFocus && _editing) {
-      _commit();
-    }
-  }
-
-  void _startEditing() {
-    setState(() {
-      _editing = true;
-      _controller.text =
-          widget.income > 0 ? widget.income.round().toString() : '';
-      _controller.selection = TextSelection(
-        baseOffset: 0,
-        extentOffset: _controller.text.length,
-      );
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
-
-  Future<void> _commit() async {
-    final parsed = double.tryParse(_controller.text.trim());
-    if (parsed != null && parsed >= 0) {
-      await ref.read(alertConfigProvider).setSalary(parsed);
-    }
-    if (!mounted) return;
-    setState(() => _editing = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    final textStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: c.primaryText,
-          fontWeight: FontWeight.w700,
-        );
-
-    return GestureDetector(
-      onTap: _editing ? null : _startEditing,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0x660A0F1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: c.borderSubtle.withValues(alpha: 0.4)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: c.categories.emerald.tint20,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.arrow_downward_rounded,
-                    size: 14,
-                    color: c.incomePositive,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Income',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: c.secondaryText,
-                      ),
-                ),
-                const Spacer(),
-                Icon(Icons.edit_rounded, size: 12, color: c.muted),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_editing)
-              TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: textStyle,
-                cursorColor: c.accentPrimary,
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  prefixText: '₹',
-                  prefixStyle: textStyle,
-                  hintText: '0',
-                  hintStyle: textStyle?.copyWith(color: c.muted),
-                ),
-                onSubmitted: (_) => _focusNode.unfocus(),
-              )
-            else
-              Text(_formatAmount(widget.income), style: textStyle),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 String _formatAmount(double amount) {
   final rounded = amount.round();

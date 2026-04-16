@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; // needed by _AddThresholdButton
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
@@ -14,38 +14,11 @@ class AlertConfigSheet extends ConsumerStatefulWidget {
 }
 
 class _AlertConfigSheetState extends ConsumerState<AlertConfigSheet> {
-  late TextEditingController _salaryCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    final salary = ref.read(alertConfigProvider).salary;
-    _salaryCtrl = TextEditingController(
-      text: salary > 0 ? salary.toStringAsFixed(0) : '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _salaryCtrl.dispose();
-    super.dispose();
-  }
-
-  static final _gold = AppColors.dark.gold;
   static final _muted = AppColors.dark.muted;
 
   @override
   Widget build(BuildContext context) {
     final config = ref.watch(alertConfigProvider);
-
-    // Sync text controller if load() completed after initState() ran
-    ref.listen<AlertConfigController>(alertConfigProvider, (_, next) {
-      if (_salaryCtrl.text.isEmpty && next.salary > 0) {
-        _salaryCtrl.text = next.salary.toStringAsFixed(0);
-        _salaryCtrl.selection =
-            TextSelection.collapsed(offset: _salaryCtrl.text.length);
-      }
-    });
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
@@ -81,47 +54,6 @@ class _AlertConfigSheetState extends ConsumerState<AlertConfigSheet> {
               ),
               const SizedBox(height: 18),
 
-              // --- Monthly income ---
-              Text(
-                'MONTHLY INCOME',
-                style: TextStyle(
-                  color: _muted,
-                  fontSize: 11,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _salaryCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  prefixText: '₹ ',
-                  prefixStyle: TextStyle(color: _gold, fontSize: 16),
-                  hintText: 'e.g. 50000',
-                  hintStyle: TextStyle(color: _muted.withValues(alpha: 0.5)),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: _gold.withValues(alpha: 0.26)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: _gold),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                ),
-                onChanged: (val) {
-                  final parsed = double.tryParse(val);
-                  if (parsed != null) {
-                    ref.read(alertConfigProvider).setSalary(parsed);
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-
               // --- Alert thresholds ---
               Row(
                 children: [
@@ -155,7 +87,7 @@ class _AlertConfigSheetState extends ConsumerState<AlertConfigSheet> {
               else
                 ...config.thresholds.map((percent) => _ThresholdTile(
                       percent: percent,
-                      salary: config.salary,
+                      income: config.monthlyIncome,
                       onDelete: () {
                         ref.read(alertConfigProvider).removeThreshold(percent);
                       },
@@ -207,18 +139,18 @@ class _AlertConfigSheetState extends ConsumerState<AlertConfigSheet> {
 class _ThresholdTile extends StatelessWidget {
   const _ThresholdTile({
     required this.percent,
-    required this.salary,
+    required this.income,
     required this.onDelete,
   });
 
   final int percent;
-  final double salary;
+  final double income;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final amountStr = salary > 0
-        ? '₹${(salary * percent / 100).toStringAsFixed(0)}'
+    final amountStr = income > 0
+        ? '₹${(income * percent / 100).toStringAsFixed(0)}'
         : '';
 
     return Padding(

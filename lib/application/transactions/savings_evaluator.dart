@@ -1,6 +1,8 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'notif_backend_helper.dart';
+
 // Monthly savings evaluator
 //
 // Computes savings = salary − total debits for the previous month, classifies
@@ -21,8 +23,8 @@ const kPrevMonthSavings = 'prev_month_savings';
 const kPrevPrevMonthSavings = 'prev_prev_month_savings';
 const kPrevMonthSpend = 'prev_month_spend';
 
-/// Existing keys (from alert_config / background_sms_handler)
-const _kSalary = 'user_salary';
+/// Income key — monthly income accumulated from credit transactions.
+const _kSalary = 'bg_monthly_income';
 const _kMonthlySpend = 'bg_monthly_spend';
 const _kTrackedMonth = 'bg_tracked_month';
 
@@ -85,10 +87,9 @@ Future<void> evaluateMonthlySavings() async {
     final message = isGoodSavings
         ? 'Great start! You saved well this month. Keep it up!'
         : 'Your savings are below 20% of your income. Let\'s work on that!';
-    await _showSavingsNotification(
-      title: isGoodSavings ? 'Good Savings!' : 'Savings Check',
-      body: message,
-    );
+    final notifTitle = isGoodSavings ? 'Good Savings!' : 'Savings Check';
+    await _showSavingsNotification(title: notifTitle, body: message);
+    await postNotificationToBackend(title: notifTitle, message: message);
     return;
   }
 
@@ -116,6 +117,7 @@ Future<void> evaluateMonthlySavings() async {
   }
 
   await _showSavingsNotification(title: title, body: body);
+  await postNotificationToBackend(title: title, message: body);
 }
 
 // Notification helper

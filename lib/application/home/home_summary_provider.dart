@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nivvesh/application/transactions/alert_config.dart';
 import 'package:nivvesh/application/transactions/spend_provider.dart';
 import 'package:nivvesh/core/constants/payment_category.dart';
 
@@ -16,7 +15,6 @@ class HomeSummary {
 }
 
 final homeSummaryProvider = Provider<HomeSummary>((ref) {
-  final manualSalary = ref.watch(alertConfigProvider).salary;
   final allMessages = ref.watch(financeControllerProvider).messages;
 
   final now = DateTime.now();
@@ -32,14 +30,10 @@ final homeSummaryProvider = Provider<HomeSummary>((ref) {
       .where((m) => m.category != PaymentCategories.creditCategory)
       .fold<double>(0, (sum, m) => sum + m.amount);
 
-  // Credits parsed from SMS this month.
-  final creditSum = monthMessages
+  // Income = credits parsed from SMS this month.
+  final monthIncome = monthMessages
       .where((m) => m.category == PaymentCategories.creditCategory)
       .fold<double>(0, (sum, m) => sum + m.amount);
-
-  // Manual salary (from tap-to-edit on balance card or bell icon sheet)
-  // wins over the credits sum; fall back to credits when nothing is set.
-  final monthIncome = manualSalary > 0 ? manualSalary : creditSum;
 
   return HomeSummary(
     monthIncome: monthIncome,

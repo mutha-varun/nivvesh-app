@@ -283,19 +283,19 @@ class CategoryLimitSlider extends StatelessWidget {
 class ThresholdTile extends StatelessWidget {
   const ThresholdTile({
     required this.percent,
-    required this.salary,
+    required this.income,
     required this.onDelete,
     super.key,
   });
 
   final int percent;
-  final double salary;
+  final double income;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    final amountStr = salary > 0 ? '₹${(salary * percent / 100).toStringAsFixed(0)}' : '';
+    final amountStr = income > 0 ? '₹${(income * percent / 100).toStringAsFixed(0)}' : '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

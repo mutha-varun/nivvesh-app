@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/home/home_cashflow_provider.dart';
-import 'package:nivvesh/application/transactions/alert_config.dart';
+import 'package:nivvesh/application/home/home_summary_provider.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
 class HomeCashflowCard extends ConsumerWidget {
@@ -14,7 +14,7 @@ class HomeCashflowCard extends ConsumerWidget {
     final period = ref.watch(homePeriodProvider);
     final mode = ref.watch(homeGraphModeProvider);
     final series = ref.watch(homeCashflowProvider);
-    final salary = ref.watch(alertConfigProvider).salary;
+    final salary = ref.watch(homeSummaryProvider).monthIncome;
 
     return Container(
       padding: const EdgeInsets.all(20),
