@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
 import 'package:nivvesh/presentation/alerts/alerts_page.dart';
 import 'package:nivvesh/presentation/home/pages/investment_page.dart';
+import 'package:nivvesh/presentation/journey/pages/journey_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
 import 'package:nivvesh/presentation/shell/coming_soon_page.dart';
@@ -86,8 +87,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/journey',
-                builder: (context, state) =>
-                    const ComingSoonPage(tabName: 'Journey'),
+                builder: (context, state) => const JourneyPage(),
               ),
             ],
           ),
