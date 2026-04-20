@@ -4,6 +4,7 @@ import 'package:nivvesh/application/journey/journey_controller.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 import 'package:nivvesh/domain/models/requests/journey.dart';
 import 'package:nivvesh/presentation/journey/widgets/create_journey_sheet.dart';
+import 'package:nivvesh/presentation/journey/widgets/edit_journey_sheet.dart';
 
 class JourneyPage extends ConsumerWidget {
   const JourneyPage({super.key});
@@ -219,6 +220,23 @@ class _JourneyCard extends ConsumerWidget {
   final JourneyItem journey;
   final AppColorsBase c;
 
+  void _openEditSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: EditJourneySheet(
+          journey: journey,
+          onUpdated: () => ref.invalidate(journeysControllerProvider),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = journey.amount > 0
@@ -289,7 +307,7 @@ class _JourneyCard extends ConsumerWidget {
                   _IconAction(
                     icon: Icons.edit_rounded,
                     color: c.secondaryText,
-                    onTap: () {},
+                    onTap: () => _openEditSheet(context, ref),
                   ),
                   const SizedBox(width: 4),
                   _IconAction(

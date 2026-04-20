@@ -43,3 +43,21 @@ class CreateJourneyController extends _$CreateJourneyController {
     }
   }
 }
+
+@riverpod
+class EditJourneyController extends _$EditJourneyController {
+  @override
+  FutureOr<void> build() {}
+
+  Future<void> editJourney(int journeyId, JourneyUpdateRequest request) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(journeyRepositoryProvider)
+          .updateJourneyById(journeyId, request);
+    });
+    if (!state.hasError) {
+      ref.invalidate(journeysControllerProvider);
+    }
+  }
+}

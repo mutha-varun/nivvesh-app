@@ -7,7 +7,7 @@ part of 'journey_controller.dart';
 // **************************************************************************
 
 String _$journeysControllerHash() =>
-    r'13eb8014eae1268b9d338c9d52de24148dbbd037';
+    r'29a78fe9ed1cd84e75dc997f743b33b674d548b6';
 
 /// See also [JourneysController].
 @ProviderFor(JourneysController)
@@ -40,5 +40,22 @@ final createJourneyControllerProvider =
 );
 
 typedef _$CreateJourneyController = AutoDisposeAsyncNotifier<void>;
+String _$editJourneyControllerHash() =>
+    r'202fc5854424952eaa5042f0b3a769d67b99dd39';
+
+/// See also [EditJourneyController].
+@ProviderFor(EditJourneyController)
+final editJourneyControllerProvider =
+    AutoDisposeAsyncNotifierProvider<EditJourneyController, void>.internal(
+  EditJourneyController.new,
+  name: r'editJourneyControllerProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$editJourneyControllerHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$EditJourneyController = AutoDisposeAsyncNotifier<void>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
