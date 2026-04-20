@@ -26,6 +26,11 @@ class JourneysController extends _$JourneysController {
         );
     await refresh();
   }
+
+  Future<void> deleteJourney(int journeyId) async {
+    await ref.read(journeyRepositoryProvider).deleteJourneyById(journeyId);
+    await refresh();
+  }
 }
 
 @riverpod
@@ -55,6 +60,22 @@ class EditJourneyController extends _$EditJourneyController {
       await ref
           .read(journeyRepositoryProvider)
           .updateJourneyById(journeyId, request);
+    });
+    if (!state.hasError) {
+      ref.invalidate(journeysControllerProvider);
+    }
+  }
+}
+
+@riverpod
+class DeleteJourneyController extends _$DeleteJourneyController {
+  @override
+  FutureOr<void> build() {}
+
+  Future<void> deleteJourney(int journeyId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(journeyRepositoryProvider).deleteJourneyById(journeyId);
     });
     if (!state.hasError) {
       ref.invalidate(journeysControllerProvider);

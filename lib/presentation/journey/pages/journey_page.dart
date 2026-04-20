@@ -237,6 +237,35 @@ class _JourneyCard extends ConsumerWidget {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete journey?'),
+        content: Text(
+          'Are you sure you want to delete "${journey.goalName}"? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref
+          .read(journeysControllerProvider.notifier)
+          .deleteJourney(journey.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = journey.amount > 0
@@ -296,20 +325,18 @@ class _JourneyCard extends ConsumerWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _formatAmount(journey.amount),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: c.primaryText,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(width: 8),
                   _IconAction(
                     icon: Icons.edit_rounded,
                     color: c.secondaryText,
                     onTap: () => _openEditSheet(context, ref),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 8),
+                  _IconAction(
+                    icon: Icons.delete_outline_rounded,
+                    color: Colors.red,
+                    onTap: () => _confirmDelete(context, ref),
+                  ),
+                  const SizedBox(width: 8),
                   _IconAction(
                     icon: journey.isComplete
                         ? Icons.check_circle_rounded
@@ -326,6 +353,17 @@ class _JourneyCard extends ConsumerWidget {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              _formatAmount(journey.amount),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: c.primaryText,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
