@@ -18,6 +18,14 @@ class JourneysController extends _$JourneysController {
       () => ref.read(journeyRepositoryProvider).getJourneys(),
     );
   }
+
+  Future<void> toggleComplete(JourneyItem journey) async {
+    await ref.read(journeyRepositoryProvider).updateJourneyById(
+          journey.id,
+          JourneyUpdateRequest(isComplete: !journey.isComplete),
+        );
+    await refresh();
+  }
 }
 
 @riverpod

@@ -31,31 +31,93 @@ class JourneyPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.background,
-      appBar: AppBar(
-        title: Text(
-          'Journey',
-          style: TextStyle(
-            color: c.primaryText,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _JourneyHeader(c: c),
+                Expanded(
+                  child: journeysAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => _JourneyErrorState(
+                      message: e.toString(),
+                      onRetry: () => ref
+                          .read(journeysControllerProvider.notifier)
+                          .refresh(),
+                    ),
+                    data: (response) => response.journeys.isEmpty
+                        ? _JourneyEmptyState(c: c)
+                        : _JourneyList(journeys: response.journeys, c: c),
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              bottom: 24,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () => _openCreateSheet(context, ref),
+                backgroundColor: c.accentPrimary,
+                foregroundColor: Colors.black,
+                child: const Icon(Icons.add_rounded),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _JourneyHeader extends StatelessWidget {
+  const _JourneyHeader({required this.c});
+
+  final AppColorsBase c;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0x336366F1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0x4D6366F1)),
+            ),
+            child: const Icon(
+              Icons.map_outlined,
+              color: Color(0xFF818CF8),
+              size: 20,
+            ),
           ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openCreateSheet(context, ref),
-        backgroundColor: c.accentPrimary,
-        foregroundColor: Colors.black,
-        child: const Icon(Icons.add_rounded),
-      ),
-      body: journeysAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _JourneyErrorState(
-          message: e.toString(),
-          onRetry: () => ref.read(journeysControllerProvider.notifier).refresh(),
-        ),
-        data: (response) => response.journeys.isEmpty
-            ? _JourneyEmptyState(c: c)
-            : _JourneyList(journeys: response.journeys, c: c),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'My Journey',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: c.primaryText,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              Text(
+                'Track your savings goals',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: c.secondaryText),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -70,7 +132,7 @@ class _JourneyList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       itemCount: journeys.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _JourneyCard(
@@ -81,100 +143,250 @@ class _JourneyList extends StatelessWidget {
   }
 }
 
-class _JourneyCard extends StatelessWidget {
+enum _GoalType { short, mid, long }
+
+extension _GoalTypeX on _GoalType {
+  Color get iconColor {
+    switch (this) {
+      case _GoalType.short:
+        return const Color(0xFF34D399);
+      case _GoalType.mid:
+        return const Color(0xFF60A5FA);
+      case _GoalType.long:
+        return const Color(0xFFC084FC);
+    }
+  }
+
+  Color get iconBg {
+    switch (this) {
+      case _GoalType.short:
+        return const Color(0x1A10B981);
+      case _GoalType.mid:
+        return const Color(0x1A3B82F6);
+      case _GoalType.long:
+        return const Color(0x1AA855F7);
+    }
+  }
+
+  Color get progressColor {
+    switch (this) {
+      case _GoalType.short:
+        return const Color(0xFF34D399);
+      case _GoalType.mid:
+        return const Color(0xFF60A5FA);
+      case _GoalType.long:
+        return const Color(0xFFC084FC);
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case _GoalType.short:
+        return Icons.rocket_launch_rounded;
+      case _GoalType.mid:
+        return Icons.track_changes_rounded;
+      case _GoalType.long:
+        return Icons.landscape_rounded;
+    }
+  }
+}
+
+_GoalType _goalTypeFromMonths(String time) {
+  final months = int.tryParse(time) ?? 0;
+  if (months < 6) return _GoalType.short;
+  if (months <= 24) return _GoalType.mid;
+  return _GoalType.long;
+}
+
+String _formatAmount(int amount) {
+  if (amount >= 10000000) {
+    return '₹${(amount / 10000000).toStringAsFixed(1)}Cr';
+  } else if (amount >= 100000) {
+    return '₹${(amount / 100000).toStringAsFixed(1)}L';
+  } else if (amount >= 1000) {
+    final formatted = amount.toString();
+    if (formatted.length > 3) {
+      return '₹${formatted.substring(0, formatted.length - 3)},${formatted.substring(formatted.length - 3)}';
+    }
+    return '₹$formatted';
+  }
+  return '₹$amount';
+}
+
+class _JourneyCard extends ConsumerWidget {
   const _JourneyCard({required this.journey, required this.c});
 
   final JourneyItem journey;
   final AppColorsBase c;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final progress = journey.amount > 0
         ? (journey.progress / journey.amount).clamp(0.0, 1.0)
         : 0.0;
+    final progressPct = (progress * 100).round();
+    final goalType = _goalTypeFromMonths(journey.time);
+    final months = int.tryParse(journey.time) ?? 0;
+    final monthlyNeeded = months > 0 ? (journey.amount / months).round() : 0;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: c.surfaceTintLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: c.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: goalType.iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(goalType.icon, color: goalType.iconColor, size: 20),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  journey.goalName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: c.primaryText,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              if (journey.isComplete)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Complete',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      journey.goalName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: c.primaryText,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${journey.time} months left',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: c.secondaryText),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _formatAmount(journey.amount),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: c.primaryText,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  _IconAction(
+                    icon: Icons.edit_rounded,
+                    color: c.secondaryText,
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 4),
+                  _IconAction(
+                    icon: journey.isComplete
+                        ? Icons.check_circle_rounded
+                        : Icons.check_circle_outline_rounded,
+                    color: journey.isComplete
+                        ? Colors.green
+                        : c.secondaryText,
+                    onTap: () {
+                      ref
+                          .read(journeysControllerProvider.notifier)
+                          .toggleComplete(journey);
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.calendar_month_rounded, size: 14, color: c.secondaryText),
-              const SizedBox(width: 4),
               Text(
-                '${journey.time} months',
+                'Progress',
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
                     ?.copyWith(color: c.secondaryText),
               ),
-              const SizedBox(width: 16),
-              Icon(Icons.currency_rupee_rounded, size: 14, color: c.secondaryText),
               Text(
-                '${journey.amount}',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: c.secondaryText),
+                '$progressPct%',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: goalType.progressColor,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: c.borderSubtle,
-              color: c.accentPrimary,
-              minHeight: 6,
+              color: goalType.progressColor,
+              minHeight: 8,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            '₹${journey.progress} / ₹${journey.amount}',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: c.secondaryText),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: c.borderSubtle)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Suggested monthly',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: c.secondaryText),
+                ),
+                Text(
+                  _formatAmount(monthlyNeeded),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: c.primaryText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _IconAction extends StatelessWidget {
+  const _IconAction({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Icon(icon, size: 20, color: color),
     );
   }
 }

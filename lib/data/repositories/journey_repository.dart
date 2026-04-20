@@ -4,12 +4,13 @@ import 'package:nivvesh/data/api/http_client_interceptor.dart';
 import 'package:nivvesh/data/api/journey.api.dart';
 import 'package:nivvesh/data/cache/auth_cache.dart';
 import 'package:nivvesh/data/repositories/api_response_handler.dart';
+import 'package:nivvesh/data/repositories/journey_repository_base.dart';
 import 'package:nivvesh/domain/models/requests/journey.dart';
 
 /// Repository for journey APIs.
 ///
 /// Uses authenticated HTTP client; backend resolves user identity from JWT.
-class JourneyRepository {
+class JourneyRepository extends JourneyRepositoryBase {
   JourneyRepository({
     required this.httpClient,
     required this.api,
@@ -34,6 +35,7 @@ class JourneyRepository {
   }
 
   /// Fetches journeys for the authenticated user with pagination.
+  @override
   Future<JourneyListResponse> getJourneys({
     int page = 1,
     int perPage = 20,
@@ -57,6 +59,7 @@ class JourneyRepository {
   });
 
   /// Fetches a single journey by id.
+  @override
   Future<JourneyDetailResponse> getJourneyById(int journeyId) => safeCall(
     () async {
       final uri = api.getJourneyById(journeyId);
@@ -74,6 +77,7 @@ class JourneyRepository {
   );
 
   /// Updates a journey by id.
+  @override
   Future<JourneyActionResponse> updateJourneyById(
     int journeyId,
     JourneyUpdateRequest request,
@@ -98,6 +102,7 @@ class JourneyRepository {
   });
 
   /// Creates a new journey.
+  @override
   Future<JourneyActionResponse> createJourney(
     JourneyCreateRequest request,
   ) => safeCall(() async {
@@ -121,6 +126,7 @@ class JourneyRepository {
   });
 
   /// Deletes a journey by id.
+  @override
   Future<JourneyActionResponse> deleteJourneyById(int journeyId) => safeCall(
     () async {
       final uri = api.deleteJourneyById(journeyId);
