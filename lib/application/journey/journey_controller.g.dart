@@ -7,7 +7,7 @@ part of 'journey_controller.dart';
 // **************************************************************************
 
 String _$journeysControllerHash() =>
-    r'29a78fe9ed1cd84e75dc997f743b33b674d548b6';
+    r'c4ccf9270e1cad3d8225459697320b5f7abb0310';
 
 /// See also [JourneysController].
 @ProviderFor(JourneysController)
@@ -58,7 +58,7 @@ final editJourneyControllerProvider =
 
 typedef _$EditJourneyController = AutoDisposeAsyncNotifier<void>;
 String _$deleteJourneyControllerHash() =>
-    r'0000000000000000000000000000000000000000';
+    r'cf522f8c49e4ff14bcfbbfd9c6860f5dabe5d82c';
 
 /// See also [DeleteJourneyController].
 @ProviderFor(DeleteJourneyController)

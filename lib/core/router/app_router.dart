@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
+import 'package:nivvesh/presentation/ai/pages/ai_chat_page.dart';
 import 'package:nivvesh/presentation/alerts/alerts_page.dart';
 import 'package:nivvesh/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/presentation/journey/pages/journey_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
-import 'package:nivvesh/presentation/shell/coming_soon_page.dart';
 import 'package:nivvesh/presentation/shell/main_shell.dart';
 import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
@@ -78,8 +78,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/ai',
-                builder: (context, state) =>
-                    const ComingSoonPage(tabName: 'AI Insights'),
+                builder: (context, state) => const AiChatPage(),
               ),
             ],
           ),
