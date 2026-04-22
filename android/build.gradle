@@ -16,6 +16,16 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
+subprojects { subproject ->
+    subproject.afterEvaluate {
+        def androidExt = subproject.extensions.findByName("android")
+        if (androidExt != null) {
+            androidExt.compileSdkVersion 36
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
