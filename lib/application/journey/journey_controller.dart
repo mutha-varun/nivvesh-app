@@ -19,10 +19,16 @@ class JourneysController extends _$JourneysController {
     );
   }
 
-  Future<void> toggleComplete(JourneyItem journey) async {
+  Future<void> addMonthlyProgress(JourneyItem journey, int increment) async {
+    if (increment <= 0 || journey.isComplete) return;
+    final newProgress = (journey.progress + increment).clamp(0, journey.amount);
+    final isNowComplete = newProgress >= journey.amount;
     await ref.read(journeyRepositoryProvider).updateJourneyById(
           journey.id,
-          JourneyUpdateRequest(isComplete: !journey.isComplete),
+          JourneyUpdateRequest(
+            progress: newProgress,
+            isComplete: isNowComplete,
+          ),
         );
     await refresh();
   }

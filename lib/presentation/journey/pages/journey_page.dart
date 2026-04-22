@@ -132,14 +132,34 @@ class _JourneyList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    final active = journeys.where((j) => !j.isComplete).toList();
+    final completed = journeys.where((j) => j.isComplete).toList();
+
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-      itemCount: journeys.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _JourneyCard(
-        journey: journeys[index],
-        c: c,
-      ),
+      children: [
+        for (final j in active) ...[
+          _JourneyCard(journey: j, c: c),
+          const SizedBox(height: 12),
+        ],
+        if (completed.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+            child: Text(
+              'Completed',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: c.secondaryText,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+            ),
+          ),
+          for (final j in completed) ...[
+            _JourneyCard(journey: j, c: c),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ],
     );
   }
 }
@@ -235,6 +255,63 @@ class _JourneyCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _promptMonthlyProgress(
+    BuildContext context,
+    WidgetRef ref,
+    int suggestedMonthly,
+  ) async {
+    if (journey.isComplete) return;
+    final controller = TextEditingController();
+    final entered = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Log monthly progress'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Leave blank to use suggested monthly (${_formatAmount(suggestedMonthly)}).',
+              style: Theme.of(dialogContext).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '₹ ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              final parsed = int.tryParse(text);
+              Navigator.of(dialogContext).pop(
+                parsed != null && parsed > 0 ? parsed : suggestedMonthly,
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (entered != null && entered > 0) {
+      await ref
+          .read(journeysControllerProvider.notifier)
+          .addMonthlyProgress(journey, entered);
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
@@ -344,11 +421,11 @@ class _JourneyCard extends ConsumerWidget {
                     color: journey.isComplete
                         ? Colors.green
                         : c.secondaryText,
-                    onTap: () {
-                      ref
-                          .read(journeysControllerProvider.notifier)
-                          .toggleComplete(journey);
-                    },
+                    onTap: () => _promptMonthlyProgress(
+                      context,
+                      ref,
+                      monthlyNeeded,
+                    ),
                   ),
                 ],
               ),
