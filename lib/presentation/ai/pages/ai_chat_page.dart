@@ -46,6 +46,11 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
     _scrollToBottom();
   }
 
+  Future<void> _handlePromptTap(String text) async {
+    _inputController.text = text;
+    await _handleSend();
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
@@ -63,7 +68,7 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
             _ChatHeader(c: c),
             Expanded(
               child: messages.isEmpty
-                  ? _EmptyState(c: c)
+                  ? _HomeView(c: c, onPromptTap: _handlePromptTap)
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -158,50 +163,373 @@ class _ChatHeader extends ConsumerWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.c});
+class _Prompt {
+  const _Prompt(this.text, this.color);
+  final String text;
+  final Color color;
+}
+
+class _Feature {
+  const _Feature({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.iconColor,
+    required this.iconBg,
+    required this.border,
+    required this.prompts,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color iconColor;
+  final Color iconBg;
+  final Color border;
+  final List<_Prompt> prompts;
+}
+
+const _features = <_Feature>[
+  _Feature(
+    icon: Icons.track_changes_rounded,
+    title: 'Savings Goals',
+    description: 'Plan and achieve your savings goals',
+    iconColor: Color(0xFF22C55E),
+    iconBg: Color(0x1A22C55E),
+    border: Color(0x3322C55E),
+    prompts: [
+      _Prompt('How can I save for a car?', Color(0xFF4ADE80)),
+      _Prompt('Best way to save for a phone?', Color(0xFF4ADE80)),
+    ],
+  ),
+  _Feature(
+    icon: Icons.credit_card_rounded,
+    title: 'Spending Optimization',
+    description: 'Understand and reduce unnecessary expenses',
+    iconColor: Color(0xFF3B82F6),
+    iconBg: Color(0x1A3B82F6),
+    border: Color(0x333B82F6),
+    prompts: [
+      _Prompt('Where am I overspending?', Color(0xFF60A5FA)),
+      _Prompt('How can I save more from my salary?', Color(0xFF60A5FA)),
+    ],
+  ),
+  _Feature(
+    icon: Icons.show_chart_rounded,
+    title: 'Investment Tips',
+    description: 'Smart investment strategies for growth',
+    iconColor: Color(0xFFA855F7),
+    iconBg: Color(0x1AA855F7),
+    border: Color(0x33A855F7),
+    prompts: [
+      _Prompt('Should I invest in stocks?', Color(0xFFC084FC)),
+      _Prompt('Best mutual funds for beginners?', Color(0xFFC084FC)),
+    ],
+  ),
+  _Feature(
+    icon: Icons.account_balance_wallet_rounded,
+    title: 'Budget Planning',
+    description: 'Create and maintain effective budgets',
+    iconColor: Color(0xFFF59E0B),
+    iconBg: Color(0x1AF59E0B),
+    border: Color(0x33F59E0B),
+    prompts: [
+      _Prompt('Help me create a monthly budget', Color(0xFFFBBF24)),
+      _Prompt('How to track daily expenses?', Color(0xFFFBBF24)),
+    ],
+  ),
+];
+
+class _HomeView extends StatelessWidget {
+  const _HomeView({required this.c, required this.onPromptTap});
+
+  final AppColorsBase c;
+  final ValueChanged<String> onPromptTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: [
+        _Hero(c: c),
+        const SizedBox(height: 20),
+        _QuickInsightCard(c: c),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _FeatureCard(
+                feature: _features[0],
+                c: c,
+                onPromptTap: onPromptTap,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _FeatureCard(
+                feature: _features[1],
+                c: c,
+                onPromptTap: onPromptTap,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _FeatureCard(
+                feature: _features[2],
+                c: c,
+                onPromptTap: onPromptTap,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _FeatureCard(
+                feature: _features[3],
+                c: c,
+                onPromptTap: onPromptTap,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({required this.c});
 
   final AppColorsBase c;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: _accentSoft,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.auto_awesome,
-              color: _accent,
-              size: 28,
-            ),
+    return Column(
+      children: [
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+            children: [
+              TextSpan(
+                text: 'Track smarter.\n',
+                style: TextStyle(color: c.primaryText),
+              ),
+              const TextSpan(
+                text: 'Save better. 🍃',
+                style: TextStyle(color: Color(0xFF22C55E)),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'How can I help?',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: c.primaryText,
-                  fontWeight: FontWeight.w600,
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'Your AI finance assistant is here to help you make better money decisions.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: c.secondaryText,
                 ),
           ),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              'Ask anything about your spending, savings, or goals.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: c.secondaryText,
-                  ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickInsightCard extends StatelessWidget {
+  const _QuickInsightCard({required this.c});
+
+  final AppColorsBase c;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            c.surfaceTintMid,
+            c.surfaceTintLow,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x3322C55E)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: Color(0x1A22C55E),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.trending_up_rounded,
+              color: Color(0xFF22C55E),
+              size: 24,
             ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '✨ Quick Insight',
+                  style: TextStyle(
+                    color: Color(0xFF4ADE80),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'You can save ₹2,000 this month',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: c.primaryText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'by reducing food delivery and subscriptions.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: c.secondaryText,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: c.secondaryText,
+            size: 20,
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.feature,
+    required this.c,
+    required this.onPromptTap,
+  });
+
+  final _Feature feature;
+  final AppColorsBase c;
+  final ValueChanged<String> onPromptTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c.surfaceTintMid, c.surfaceTintLow],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: feature.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: feature.iconBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(feature.icon, color: feature.iconColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      feature.title,
+                      style: TextStyle(
+                        color: c.primaryText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      feature.description,
+                      style: TextStyle(
+                        color: c.secondaryText,
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (final p in feature.prompts)
+            _PromptButton(prompt: p, onTap: () => onPromptTap(p.text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PromptButton extends StatelessWidget {
+  const _PromptButton({required this.prompt, required this.onTap});
+
+  final _Prompt prompt;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                prompt.text,
+                style: TextStyle(
+                  color: prompt.color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 14,
+              color: prompt.color.withValues(alpha: 0.7),
+            ),
+          ],
+        ),
       ),
     );
   }
