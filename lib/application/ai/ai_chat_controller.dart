@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'ai_chat_controller.g.dart';
@@ -86,12 +87,13 @@ class AiChatController extends _$AiChatController {
           else
             m,
       ];
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AI chat engine failed: $e\n$st');
       state = [
         for (final m in state)
           if (m.id == pendingId)
             m.copyWith(
-              text: 'Something went wrong. Please try again.',
+              text: 'Something went wrong: $e',
               isPending: false,
             )
           else

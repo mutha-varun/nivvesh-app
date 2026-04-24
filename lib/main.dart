@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
+import 'package:nivvesh/application/ai/ai_chat_controller.dart';
+import 'package:nivvesh/application/ai/gemini_ai_chat_engine.dart';
 import 'package:nivvesh/application/transactions/background_sms_handler.dart';
 import 'package:nivvesh/application/transactions/savings_evaluator.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
@@ -18,6 +20,12 @@ import 'package:nivvesh/core/theme/theme_provider.dart';
 
 // WorkManager task name
 const _kSavingsTask = 'monthly_savings_eval';
+
+const _kGeminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
+const _kGeminiModel = String.fromEnvironment(
+  'GEMINI_MODEL',
+  defaultValue: 'gemini-2.5-flash',
+);
 
 /// Top-level callback for WorkManager — must not be anonymous.
 @pragma('vm:entry-point')
@@ -79,7 +87,13 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [isarProvider.overrideWithValue(isar)],
+      overrides: [
+        isarProvider.overrideWithValue(isar),
+        if (_kGeminiApiKey.isNotEmpty)
+          aiChatEngineProvider.overrideWithValue(
+            GeminiAiChatEngine(apiKey: _kGeminiApiKey, model: _kGeminiModel),
+          ),
+      ],
       child: const MyApp(),
     ),
   );
