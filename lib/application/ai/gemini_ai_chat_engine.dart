@@ -56,10 +56,15 @@ class GeminiAiChatEngine implements AiChatEngine {
         },
     };
 
+    final encodedBody = jsonEncode(body);
+    _logLong('--- Gemini request → $uri ---');
+    _logLong(const JsonEncoder.withIndent('  ').convert(body));
+    _logLong('--- end Gemini request ---');
+
     final res = await _client.post(
       uri,
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
+      body: encodedBody,
     );
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -80,5 +85,16 @@ class GeminiAiChatEngine implements AiChatEngine {
         .map((p) => (p as Map<String, dynamic>)['text'] as String? ?? '')
         .join();
     return text.trim();
+  }
+}
+
+/// `debugPrint` truncates long lines on Android. Split into ~800-char chunks
+/// and print sequentially so the whole payload reaches the terminal.
+void _logLong(String s) {
+  const chunk = 800;
+  for (var i = 0; i < s.length; i += chunk) {
+    final end = (i + chunk < s.length) ? i + chunk : s.length;
+    // ignore: avoid_print
+    print(s.substring(i, end));
   }
 }

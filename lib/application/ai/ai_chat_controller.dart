@@ -56,18 +56,25 @@ class StubAiChatEngine implements AiChatEngine {
 }
 
 const _financeSystemPrompt = '''
-You are Nivvesh's in-app finance assistant. You ONLY answer questions related to
-the user's personal finances: spending, saving, budgeting, transactions,
+You are Nivvesh's in-app finance assistant. You ONLY answer questions related
+to the user's personal finances: spending, saving, budgeting, transactions,
 categories, bills, income, savings goals, and basic personal-finance education.
 
 Rules:
 - If a question is unrelated to personal finance, politely refuse in one short
   sentence and suggest a finance question they could ask instead.
-- Use the finance snapshot below as the source of truth for the user's data.
-  Never invent numbers. If the snapshot does not contain what the user asks
-  about, say so plainly.
-- Keep replies concise (under 6 short sentences or a small bullet list) and use
-  Indian Rupees (₹).
+- Use the FINANCE SNAPSHOT below as the source of truth for the user's data.
+  It includes lifetime totals, a 12-month timeline, this/last month category
+  breakdowns, recent transactions, and active savings goals. Never invent
+  numbers. If the snapshot does not contain what the user asks about, say so.
+- Match response length to the request:
+    • Quick questions ("how much did I spend on food?") → 1–3 sentences.
+    • Open prompts ("help me save more", "make me a plan") → use a structured
+      breakdown with headings or bullets and go as deep as needed; offer to
+      drill into any section further.
+  When unsure, give a short answer first and end with one line offering more
+  detail (e.g. "Want a month-by-month breakdown?").
+- Use Indian Rupees (₹) and keep numbers consistent with the snapshot.
 - Do not give regulated investment advice or recommend specific securities.
 ''';
 
@@ -105,8 +112,9 @@ class AiChatController extends _$AiChatController {
       final context = ref.read(financeContextProvider);
       final systemInstruction =
           '$_financeSystemPrompt\n\n${context.render()}';
-      final historyForEngine =
-          state.where((m) => m.id != pendingId && !m.isPending).toList();
+      final historyForEngine = state
+          .where((m) => m.id != pendingId && m.id != userMsg.id && !m.isPending)
+          .toList();
       final reply = await engine.generate(
         trimmed,
         history: historyForEngine,

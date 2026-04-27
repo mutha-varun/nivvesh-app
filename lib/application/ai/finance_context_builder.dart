@@ -7,54 +7,114 @@ import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/domain/models/requests/journey.dart';
 
 /// Snapshot of the user's finances assembled for the AI model.
-/// Kept compact — current month aggregates plus a small recent-transaction tail.
+///
+/// Strategy: avoid dumping every transaction. Instead, pre-aggregate at three
+/// granularities the model can reason over:
+///   1. Lifetime totals + per-category top spends (high-level baseline)
+///   2. Monthly time series for the last 12 months (trend detection)
+///   3. Current + previous month per-category breakdown (recent focus)
+/// Plus a small tail of the most recent raw transactions for specific recall.
 class FinanceContext {
   const FinanceContext({
     required this.monthLabel,
     required this.monthlyIncome,
-    required this.monthDebit,
-    required this.monthCredit,
-    required this.monthSavings,
-    required this.spendByCategory,
+    required this.thisMonth,
+    required this.lastMonth,
+    required this.lifetime,
+    required this.monthlyTimeline,
+    required this.thisMonthByCategory,
+    required this.lastMonthByCategory,
+    required this.lifetimeByCategory,
     required this.categoryLimits,
     required this.recentTransactions,
     required this.journeys,
+    required this.totalTransactionCount,
+    required this.firstTransactionDate,
   });
 
   final String monthLabel;
   final double monthlyIncome;
-  final double monthDebit;
-  final double monthCredit;
-  final double monthSavings;
-  final Map<String, double> spendByCategory;
+  final PeriodTotals thisMonth;
+  final PeriodTotals lastMonth;
+  final PeriodTotals lifetime;
+
+  /// Last 12 months, oldest first.
+  final List<MonthlyPoint> monthlyTimeline;
+
+  final Map<String, double> thisMonthByCategory;
+  final Map<String, double> lastMonthByCategory;
+  final Map<String, double> lifetimeByCategory;
   final Map<String, double> categoryLimits;
+
   final List<FinanceModel> recentTransactions;
   final List<JourneyItem> journeys;
+  final int totalTransactionCount;
+  final DateTime? firstTransactionDate;
 
-  /// Render as a short markdown-ish block the model can read.
   String render() {
     final buf = StringBuffer()
-      ..writeln('User finance snapshot ($monthLabel):')
-      ..writeln('- Monthly income (configured): ₹${monthlyIncome.toStringAsFixed(0)}')
-      ..writeln('- Total credits this month: ₹${monthCredit.toStringAsFixed(0)}')
-      ..writeln('- Total debits this month: ₹${monthDebit.toStringAsFixed(0)}')
-      ..writeln('- Net savings this month: ₹${monthSavings.toStringAsFixed(0)}');
+      ..writeln('USER FINANCE SNAPSHOT (current month: $monthLabel)')
+      ..writeln('Configured monthly income: ₹${_fmt(monthlyIncome)}');
 
-    if (spendByCategory.isNotEmpty) {
-      buf.writeln('Spend by category this month:');
-      final sorted = spendByCategory.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-      for (final e in sorted) {
-        final limit = categoryLimits[e.key] ?? 0;
-        final limitStr = limit > 0
-            ? ' (limit ₹${limit.toStringAsFixed(0)})'
-            : '';
-        buf.writeln('  - ${e.key}: ₹${e.value.toStringAsFixed(0)}$limitStr');
+    if (firstTransactionDate != null) {
+      buf.writeln(
+        'Tracked transactions: $totalTransactionCount '
+        '(since ${_dateStr(firstTransactionDate!)})',
+      );
+    }
+
+    buf
+      ..writeln()
+      ..writeln('TOTALS')
+      ..writeln('  This month  → debit ₹${_fmt(thisMonth.debit)}, '
+          'credit ₹${_fmt(thisMonth.credit)}, '
+          'net ₹${_fmt(thisMonth.net)}')
+      ..writeln('  Last month  → debit ₹${_fmt(lastMonth.debit)}, '
+          'credit ₹${_fmt(lastMonth.credit)}, '
+          'net ₹${_fmt(lastMonth.net)}')
+      ..writeln('  Lifetime    → debit ₹${_fmt(lifetime.debit)}, '
+          'credit ₹${_fmt(lifetime.credit)}, '
+          'net ₹${_fmt(lifetime.net)}');
+
+    if (monthlyTimeline.isNotEmpty) {
+      buf
+        ..writeln()
+        ..writeln('MONTHLY TIMELINE (last ${monthlyTimeline.length} months, oldest first)');
+      for (final p in monthlyTimeline) {
+        buf.writeln(
+          '  ${p.label}: debit ₹${_fmt(p.debit)}, credit ₹${_fmt(p.credit)}, '
+          'net ₹${_fmt(p.credit - p.debit)}',
+        );
       }
     }
 
+    void writeCategoryBlock(String title, Map<String, double> map, {int? topN}) {
+      if (map.isEmpty) return;
+      buf
+        ..writeln()
+        ..writeln(title);
+      final sorted = map.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final list = topN != null ? sorted.take(topN) : sorted;
+      for (final e in list) {
+        final limit = categoryLimits[e.key] ?? 0;
+        final limitStr = limit > 0 ? ' (limit ₹${_fmt(limit)})' : '';
+        buf.writeln('  - ${e.key}: ₹${_fmt(e.value)}$limitStr');
+      }
+    }
+
+    writeCategoryBlock('SPEND BY CATEGORY — THIS MONTH', thisMonthByCategory);
+    writeCategoryBlock('SPEND BY CATEGORY — LAST MONTH', lastMonthByCategory);
+    writeCategoryBlock(
+      'SPEND BY CATEGORY — LIFETIME (top 10)',
+      lifetimeByCategory,
+      topN: 10,
+    );
+
     if (journeys.isNotEmpty) {
-      buf.writeln('Active savings goals:');
+      buf
+        ..writeln()
+        ..writeln('SAVINGS GOALS');
       for (final j in journeys) {
         final pct = j.amount == 0 ? 0 : (j.progress * 100 / j.amount).round();
         buf.writeln(
@@ -65,13 +125,12 @@ class FinanceContext {
     }
 
     if (recentTransactions.isNotEmpty) {
-      buf.writeln('Recent transactions (latest first):');
+      buf
+        ..writeln()
+        ..writeln('RECENT TRANSACTIONS (latest ${recentTransactions.length})');
       for (final t in recentTransactions) {
-        final d = t.date;
-        final dateStr =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
         buf.writeln(
-          '  - $dateStr | ${t.category} | ₹${t.amount.toStringAsFixed(0)} | ${t.application}',
+          '  - ${_dateStr(t.date)} | ${t.category} | ₹${_fmt(t.amount)} | ${t.application}',
         );
       }
     }
@@ -80,41 +139,84 @@ class FinanceContext {
   }
 }
 
+class PeriodTotals {
+  const PeriodTotals({required this.debit, required this.credit});
+  final double debit;
+  final double credit;
+  double get net => credit - debit;
+}
+
+class MonthlyPoint {
+  const MonthlyPoint({
+    required this.label,
+    required this.debit,
+    required this.credit,
+  });
+  final String label;
+  final double debit;
+  final double credit;
+}
+
 final financeContextProvider = Provider<FinanceContext>((ref) {
   final finance = ref.watch(financeControllerProvider);
   final alerts = ref.watch(alertConfigProvider);
   final journeysAsync = ref.watch(journeysControllerProvider);
 
+  final all = finance.messages;
   final now = DateTime.now();
-  final monthStart = DateTime(now.year, now.month, 1);
-  final monthLabel =
-      '${_monthName(now.month)} ${now.year}';
+  final thisMonthStart = DateTime(now.year, now.month, 1);
+  final lastMonthStart = DateTime(now.year, now.month - 1, 1);
 
-  final thisMonth = finance.messages
-      .where((m) => !m.date.isBefore(monthStart))
-      .toList();
+  bool isCredit(FinanceModel t) => t.category == PaymentCategories.creditCategory;
 
-  double monthDebit = 0;
-  double monthCredit = 0;
-  final spendByCategory = <String, double>{};
-  for (final t in thisMonth) {
-    if (t.category == PaymentCategories.creditCategory) {
-      monthCredit += t.amount;
-    } else {
-      monthDebit += t.amount;
-      spendByCategory.update(
-        t.category,
-        (v) => v + t.amount,
-        ifAbsent: () => t.amount,
-      );
+  PeriodTotals totalsFor(Iterable<FinanceModel> txns) {
+    var d = 0.0, c = 0.0;
+    for (final t in txns) {
+      if (isCredit(t)) {
+        c += t.amount;
+      } else {
+        d += t.amount;
+      }
     }
+    return PeriodTotals(debit: d, credit: c);
   }
 
-  final income =
-      alerts.monthlyIncome > 0 ? alerts.monthlyIncome : monthCredit;
-  final savings = income - monthDebit;
+  Map<String, double> categorySpend(Iterable<FinanceModel> txns) {
+    final m = <String, double>{};
+    for (final t in txns) {
+      if (isCredit(t)) continue;
+      m.update(t.category, (v) => v + t.amount, ifAbsent: () => t.amount);
+    }
+    return m;
+  }
 
-  final recent = finance.messages.take(10).toList();
+  final thisMonthTxns =
+      all.where((t) => !t.date.isBefore(thisMonthStart)).toList();
+  final lastMonthTxns = all
+      .where((t) =>
+          !t.date.isBefore(lastMonthStart) && t.date.isBefore(thisMonthStart))
+      .toList();
+
+  // 12-month timeline, oldest first.
+  final timeline = <MonthlyPoint>[];
+  for (var i = 11; i >= 0; i--) {
+    final start = DateTime(now.year, now.month - i, 1);
+    final end = DateTime(now.year, now.month - i + 1, 1);
+    final bucket =
+        all.where((t) => !t.date.isBefore(start) && t.date.isBefore(end));
+    final tot = totalsFor(bucket);
+    timeline.add(
+      MonthlyPoint(
+        label: '${_monthName(start.month)} ${start.year}',
+        debit: tot.debit,
+        credit: tot.credit,
+      ),
+    );
+  }
+
+  final lifetimeTotals = totalsFor(all);
+  final income =
+      alerts.monthlyIncome > 0 ? alerts.monthlyIncome : totalsFor(thisMonthTxns).credit;
 
   final journeys = journeysAsync.maybeWhen(
     data: (r) => r.journeys,
@@ -122,19 +224,36 @@ final financeContextProvider = Provider<FinanceContext>((ref) {
   );
 
   return FinanceContext(
-    monthLabel: monthLabel,
+    monthLabel: '${_monthName(now.month)} ${now.year}',
     monthlyIncome: income,
-    monthDebit: monthDebit,
-    monthCredit: monthCredit,
-    monthSavings: savings,
-    spendByCategory: spendByCategory,
+    thisMonth: totalsFor(thisMonthTxns),
+    lastMonth: totalsFor(lastMonthTxns),
+    lifetime: lifetimeTotals,
+    monthlyTimeline: timeline,
+    thisMonthByCategory: categorySpend(thisMonthTxns),
+    lastMonthByCategory: categorySpend(lastMonthTxns),
+    lifetimeByCategory: categorySpend(all),
     categoryLimits: alerts.categoryLimits,
-    recentTransactions: recent,
+    recentTransactions: all.take(20).toList(),
     journeys: journeys,
+    totalTransactionCount: all.length,
+    firstTransactionDate: all.isEmpty ? null : all.last.date,
   );
 });
 
-String _monthName(int m) => const [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ][m - 1];
+String _monthName(int m) {
+  // Handle wrap-around for negative months from `month - i` arithmetic.
+  final idx = ((m - 1) % 12 + 12) % 12;
+  return const [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ][idx];
+}
+
+String _dateStr(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+String _fmt(double v) {
+  if (v == 0) return '0';
+  return v.toStringAsFixed(v.abs() < 100 ? 2 : 0);
+}
