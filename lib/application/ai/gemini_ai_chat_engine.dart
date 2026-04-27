@@ -12,7 +12,7 @@ import 'ai_chat_controller.dart';
 class GeminiAiChatEngine implements AiChatEngine {
   GeminiAiChatEngine({
     required this.apiKey,
-    this.model = 'gemini-2.0-flash',
+    this.model = 'gemini-2.5-flash',
     http.Client? client,
   }) : _client = client ?? http.Client();
 
@@ -24,26 +24,42 @@ class GeminiAiChatEngine implements AiChatEngine {
   Future<String> generate(
     String prompt, {
     required List<ChatMessage> history,
+    String? systemInstruction,
   }) async {
     final uri = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
     );
 
-    final body = jsonEncode({
-      'contents': [
+    final contents = <Map<String, dynamic>>[
+      for (final m in history)
         {
-          'role': 'user',
+          'role': m.role == ChatRole.user ? 'user' : 'model',
           'parts': [
-            {'text': prompt},
+            {'text': m.text},
           ],
         },
-      ],
-    });
+      {
+        'role': 'user',
+        'parts': [
+          {'text': prompt},
+        ],
+      },
+    ];
+
+    final body = <String, dynamic>{
+      'contents': contents,
+      if (systemInstruction != null && systemInstruction.isNotEmpty)
+        'system_instruction': {
+          'parts': [
+            {'text': systemInstruction},
+          ],
+        },
+    };
 
     final res = await _client.post(
       uri,
       headers: const {'Content-Type': 'application/json'},
-      body: body,
+      body: jsonEncode(body),
     );
 
     if (res.statusCode < 200 || res.statusCode >= 300) {

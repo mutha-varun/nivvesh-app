@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'finance_context_builder.dart';
+
 part 'ai_chat_controller.g.dart';
 
 enum ChatRole { user, assistant }
@@ -34,7 +36,11 @@ class ChatMessage {
 /// Pluggable inference backend. Swap [StubAiChatEngine] with a tflite-backed
 /// implementation by overriding [aiChatEngineProvider] in `main.dart`.
 abstract class AiChatEngine {
-  Future<String> generate(String prompt, {required List<ChatMessage> history});
+  Future<String> generate(
+    String prompt, {
+    required List<ChatMessage> history,
+    String? systemInstruction,
+  });
 }
 
 class StubAiChatEngine implements AiChatEngine {
@@ -42,11 +48,28 @@ class StubAiChatEngine implements AiChatEngine {
   Future<String> generate(
     String prompt, {
     required List<ChatMessage> history,
+    String? systemInstruction,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 700));
     return "I'm a placeholder reply. Your on-device tflite model will answer here once wired in.";
   }
 }
+
+const _financeSystemPrompt = '''
+You are Nivvesh's in-app finance assistant. You ONLY answer questions related to
+the user's personal finances: spending, saving, budgeting, transactions,
+categories, bills, income, savings goals, and basic personal-finance education.
+
+Rules:
+- If a question is unrelated to personal finance, politely refuse in one short
+  sentence and suggest a finance question they could ask instead.
+- Use the finance snapshot below as the source of truth for the user's data.
+  Never invent numbers. If the snapshot does not contain what the user asks
+  about, say so plainly.
+- Keep replies concise (under 6 short sentences or a small bullet list) and use
+  Indian Rupees (₹).
+- Do not give regulated investment advice or recommend specific securities.
+''';
 
 final aiChatEngineProvider = Provider<AiChatEngine>((_) => StubAiChatEngine());
 
@@ -79,7 +102,16 @@ class AiChatController extends _$AiChatController {
 
     try {
       final engine = ref.read(aiChatEngineProvider);
-      final reply = await engine.generate(trimmed, history: state);
+      final context = ref.read(financeContextProvider);
+      final systemInstruction =
+          '$_financeSystemPrompt\n\n${context.render()}';
+      final historyForEngine =
+          state.where((m) => m.id != pendingId && !m.isPending).toList();
+      final reply = await engine.generate(
+        trimmed,
+        history: historyForEngine,
+        systemInstruction: systemInstruction,
+      );
       state = [
         for (final m in state)
           if (m.id == pendingId)
