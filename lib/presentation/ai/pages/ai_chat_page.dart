@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/ai/ai_chat_controller.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
@@ -582,13 +583,21 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 child: message.isPending
                     ? const _TypingDots()
-                    : Text(
-                        message.text,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: textColor, height: 1.35),
-                      ),
+                    : isUser
+                        ? Text(
+                            message.text,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: textColor, height: 1.35),
+                          )
+                        : MarkdownBody(
+                            data: message.text,
+                            styleSheet: _assistantMarkdownStyle(
+                              context,
+                              textColor,
+                            ),
+                          ),
               ),
             ],
           ),
@@ -596,6 +605,30 @@ class _MessageBubble extends StatelessWidget {
       ],
     );
   }
+}
+
+MarkdownStyleSheet _assistantMarkdownStyle(BuildContext context, Color color) {
+  final base = Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: color,
+        height: 1.4,
+      );
+  return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+    p: base,
+    listBullet: base,
+    strong: base?.copyWith(fontWeight: FontWeight.w700),
+    em: base?.copyWith(fontStyle: FontStyle.italic),
+    h1: base?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+    h2: base?.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
+    h3: base?.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+    h4: base?.copyWith(fontWeight: FontWeight.w700),
+    code: base?.copyWith(
+      fontFamily: 'monospace',
+      backgroundColor: color.withValues(alpha: 0.08),
+    ),
+    blockquote: base?.copyWith(fontStyle: FontStyle.italic),
+    blockSpacing: 6,
+    listIndent: 18,
+  );
 }
 
 class _AssistantAvatar extends StatelessWidget {
