@@ -36,6 +36,8 @@
 		<string>Nivvesh would like to access your location for KYC .</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>Nivvesh would like to access your microphone to capture audio consent while KYC.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Nivvesh uses speech recognition to let you dictate questions to the in-app finance assistant.</string>
 		<key>NSPhotoLibraryUsageDescription</key> 
 		<string>Nivvesh would like to access your photo for Capturing document images in KYC.</string>
 		<key>LSApplicationQueriesSchemes</key>

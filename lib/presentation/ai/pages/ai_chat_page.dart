@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:nivvesh/application/ai/ai_chat_controller.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
@@ -697,7 +698,7 @@ class _TypingDotsState extends State<_TypingDots>
   }
 }
 
-class _ChatInputBar extends StatelessWidget {
+class _ChatInputBar extends StatefulWidget {
   const _ChatInputBar({
     required this.controller,
     required this.focusNode,
@@ -711,7 +712,79 @@ class _ChatInputBar extends StatelessWidget {
   final AppColorsBase c;
 
   @override
+  State<_ChatInputBar> createState() => _ChatInputBarState();
+}
+
+class _ChatInputBarState extends State<_ChatInputBar> {
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _sttAvailable = false;
+  bool _listening = false;
+  String _baseText = '';
+
+  @override
+  void dispose() {
+    if (_listening) _speech.cancel();
+    super.dispose();
+  }
+
+  Future<void> _toggleListening() async {
+    if (_listening) {
+      await _speech.stop();
+      setState(() => _listening = false);
+      return;
+    }
+
+    if (!_sttAvailable) {
+      _sttAvailable = await _speech.initialize(
+        onStatus: (s) {
+          if (s == 'done' || s == 'notListening') {
+            if (mounted) setState(() => _listening = false);
+          }
+        },
+        onError: (e) {
+          if (mounted) {
+            setState(() => _listening = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Voice input error: ${e.errorMsg}')),
+            );
+          }
+        },
+      );
+      if (!_sttAvailable) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone permission or speech engine unavailable.'),
+          ),
+        );
+        return;
+      }
+    }
+
+    _baseText = widget.controller.text;
+    setState(() => _listening = true);
+
+    await _speech.listen(
+      onResult: (result) {
+        final dictated = result.recognizedWords;
+        final separator = (_baseText.isEmpty || _baseText.endsWith(' ')) ? '' : ' ';
+        widget.controller.value = TextEditingValue(
+          text: '$_baseText$separator$dictated',
+          selection: TextSelection.collapsed(
+            offset: '$_baseText$separator$dictated'.length,
+          ),
+        );
+      },
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        cancelOnError: true,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final c = widget.c;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
       decoration: BoxDecoration(
@@ -733,16 +806,17 @@ class _ChatInputBar extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: controller,
-              focusNode: focusNode,
+              controller: widget.controller,
+              focusNode: widget.focusNode,
               minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => onSend(),
+              onSubmitted: (_) => widget.onSend(),
               style: TextStyle(color: c.primaryText, fontSize: 15),
               decoration: InputDecoration(
                 isCollapsed: true,
-                hintText: 'Ask about your money...',
+                hintText:
+                    _listening ? 'Listening…' : 'Ask about your money...',
                 hintStyle: TextStyle(
                   color: c.secondaryText,
                   fontSize: 15,
@@ -752,12 +826,15 @@ class _ChatInputBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.mic_none_rounded, color: c.secondaryText),
-            tooltip: 'Voice input',
+            onPressed: _toggleListening,
+            icon: Icon(
+              _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
+              color: _listening ? _accent : c.secondaryText,
+            ),
+            tooltip: _listening ? 'Stop listening' : 'Voice input',
           ),
           GestureDetector(
-            onTap: onSend,
+            onTap: widget.onSend,
             child: Container(
               width: 40,
               height: 40,
