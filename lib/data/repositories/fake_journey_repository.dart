@@ -2,36 +2,16 @@ import 'package:nivvesh/data/repositories/journey_repository_base.dart';
 import 'package:nivvesh/domain/models/requests/journey.dart';
 
 class FakeJourneyRepository extends JourneyRepositoryBase {
-  int _nextId = 4;
+  int _nextId = 2;
 
   final List<JourneyItem> _journeys = [
     JourneyItem(
       id: 1,
       goalName: 'Emergency Fund',
-      time: '8',
-      amount: 300000,
+      time: '12',
+      amount: 50000,
       userId: 1,
-      progress: 120000,
-      createdAt: DateTime.now(),
-      isComplete: false,
-    ),
-    JourneyItem(
-      id: 2,
-      goalName: 'New Laptop',
-      time: '3',
-      amount: 150000,
-      userId: 1,
-      progress: 95000,
-      createdAt: DateTime.now(),
-      isComplete: false,
-    ),
-    JourneyItem(
-      id: 3,
-      goalName: 'House Downpayment',
-      time: '36',
-      amount: 2000000,
-      userId: 1,
-      progress: 450000,
+      progress: 0,
       createdAt: DateTime.now(),
       isComplete: false,
     ),

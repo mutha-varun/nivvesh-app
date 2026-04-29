@@ -6,17 +6,34 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'journey_controller.g.dart';
 
+const _kDefaultEmergencyFundAmount = 50000;
+const _kDefaultEmergencyFundMonths = '12';
+const _kEmergencyFundName = 'Emergency Fund';
+
 @riverpod
 class JourneysController extends _$JourneysController {
   @override
-  Future<JourneyListResponse> build() =>
-      ref.read(journeyRepositoryProvider).getJourneys();
+  Future<JourneyListResponse> build() => _fetchWithDefaults();
+
+  Future<JourneyListResponse> _fetchWithDefaults() async {
+    final repo = ref.read(journeyRepositoryProvider);
+    final response = await repo.getJourneys();
+    if (response.journeys.isEmpty) {
+      await repo.createJourney(
+        JourneyCreateRequest(
+          goalName: _kEmergencyFundName,
+          time: _kDefaultEmergencyFundMonths,
+          amount: _kDefaultEmergencyFundAmount,
+        ),
+      );
+      return repo.getJourneys();
+    }
+    return response;
+  }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(journeyRepositoryProvider).getJourneys(),
-    );
+    state = await AsyncValue.guard(_fetchWithDefaults);
   }
 
   Future<void> addMonthlyProgress(JourneyItem journey, int increment) async {
