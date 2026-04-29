@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telephony/telephony.dart';
 
 import 'notif_backend_helper.dart';
+import 'local_notification_routes.dart';
 import 'savings_evaluator.dart';
 import 'sms_parser.dart';
 
@@ -159,6 +160,7 @@ Future<void> _handleIncomingSms(SmsMessage message) async {
           id: 5000 + percent,
           title: title,
           body: body,
+          payload: kAiNotificationPayload,
         );
         await postNotificationToBackend(title: title, message: body);
         break; // one notification per SMS for income-based checks
@@ -194,6 +196,7 @@ Future<void> _handleIncomingSms(SmsMessage message) async {
               _catThresholdIndex(percent),
           title: title,
           body: body,
+          payload: kAiNotificationPayload,
         );
         await postNotificationToBackend(title: title, message: body);
         break; // one category notification per SMS
@@ -232,6 +235,7 @@ Future<void> _showNotification({
   required int id,
   required String title,
   required String body,
+  required String payload,
 }) async {
   final plugin = FlutterLocalNotificationsPlugin();
   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -251,5 +255,6 @@ Future<void> _showNotification({
     title,
     body,
     const NotificationDetails(android: androidDetails),
+    payload: payload,
   );
 }

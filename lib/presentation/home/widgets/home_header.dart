@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nivvesh/application/transactions/local_notification_routes.dart';
 import 'package:nivvesh/core/theme/app_colors.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -43,8 +44,37 @@ class HomeHeader extends StatelessWidget {
               ],
             ),
           ),
+          _TestNotifButton(colors: c),
+          const SizedBox(width: 8),
           _BellButton(colors: c),
         ],
+      ),
+    );
+  }
+}
+
+class _TestNotifButton extends StatelessWidget {
+  const _TestNotifButton({required this.colors});
+
+  final AppColorsBase colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async => showAiRedirectTestNotification(),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: colors.surfaceTintHigh,
+          shape: BoxShape.circle,
+          border: Border.all(color: colors.borderSubtle),
+        ),
+        child: Icon(
+          Icons.bolt_rounded,
+          color: colors.muted,
+          size: 16,
+        ),
       ),
     );
   }

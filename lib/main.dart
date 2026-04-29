@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:nivvesh/application/ai/ai_chat_controller.dart';
 import 'package:nivvesh/application/ai/gemini_ai_chat_engine.dart';
 import 'package:nivvesh/application/transactions/background_sms_handler.dart';
+import 'package:nivvesh/application/transactions/local_notification_routes.dart';
 import 'package:nivvesh/application/transactions/savings_evaluator.dart';
 import 'package:nivvesh/domain/models/finance_model.dart';
 import 'package:nivvesh/core/router/app_router.dart';
@@ -26,6 +28,26 @@ const _kGeminiModel = String.fromEnvironment(
   'GEMINI_MODEL',
   defaultValue: 'gemini-2.5-flash',
 );
+
+final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+String? _pendingNotificationRoute;
+
+void _openAiRouteFromNotification() {
+  final context = rootNavigatorKey.currentContext;
+  if (context != null) {
+    context.go(kAiNotificationRoute);
+  } else {
+    _pendingNotificationRoute = kAiNotificationRoute;
+  }
+}
+
+void _handleLocalNotificationTap(NotificationResponse response) {
+  if (response.payload == kAiNotificationPayload) {
+    _openAiRouteFromNotification();
+  }
+}
 
 /// Top-level callback for WorkManager — must not be anonymous.
 @pragma('vm:entry-point')
@@ -51,7 +73,16 @@ Future<void> main() async {
     try {
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
       const initSettings = InitializationSettings(android: androidInit);
-      await FlutterLocalNotificationsPlugin().initialize(initSettings);
+      await _localNotificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _handleLocalNotificationTap,
+      );
+
+      final launchDetails =
+          await _localNotificationsPlugin.getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp ?? false) {
+        _pendingNotificationRoute = kAiNotificationRoute;
+      }
 
       await Permission.notification.request();
 
@@ -99,12 +130,28 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final pendingRoute = _pendingNotificationRoute;
+      if (pendingRoute == null) return;
+      _pendingNotificationRoute = null;
+      ref.read(goRouterProvider).go(pendingRoute);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
 
     return MaterialApp.router(

@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'local_notification_routes.dart';
 import 'notif_backend_helper.dart';
 
 // Monthly savings evaluator
@@ -88,7 +89,11 @@ Future<void> evaluateMonthlySavings() async {
         ? 'Great start! You saved well this month. Keep it up!'
         : 'Your savings are below 20% of your income. Let\'s work on that!';
     final notifTitle = isGoodSavings ? 'Good Savings!' : 'Savings Check';
-    await _showSavingsNotification(title: notifTitle, body: message);
+    await _showSavingsNotification(
+      title: notifTitle,
+      body: message,
+      payload: kAiNotificationPayload,
+    );
     await postNotificationToBackend(title: notifTitle, message: message);
     return;
   }
@@ -116,7 +121,11 @@ Future<void> evaluateMonthlySavings() async {
     body = 'Your savings dropped this month, let\'s get back on track!';
   }
 
-  await _showSavingsNotification(title: title, body: body);
+  await _showSavingsNotification(
+    title: title,
+    body: body,
+    payload: kAiNotificationPayload,
+  );
   await postNotificationToBackend(title: title, message: body);
 }
 
@@ -128,6 +137,7 @@ const _notificationId = 9001;
 Future<void> _showSavingsNotification({
   required String title,
   required String body,
+  required String payload,
 }) async {
   final plugin = FlutterLocalNotificationsPlugin();
   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -151,5 +161,6 @@ Future<void> _showSavingsNotification({
     title,
     body,
     const NotificationDetails(android: androidDetails, iOS: darwinDetails),
+    payload: payload,
   );
 }

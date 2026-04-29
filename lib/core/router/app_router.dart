@@ -13,12 +13,12 @@ import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     refreshListenable: _RouterNotifier(ref),
     redirect: (BuildContext context, GoRouterState state) {
       final authState = ref.read(authStateProvider);
