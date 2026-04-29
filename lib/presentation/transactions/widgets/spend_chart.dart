@@ -93,7 +93,8 @@ class _SpendChartViewState extends State<SpendChartView> {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            curveSmoothness: 0.3,
+            curveSmoothness: 0.2,
+            preventCurveOverShooting: true,
             color: c.expenseNegative,
             barWidth: 2,
             isStrokeCapRound: true,
@@ -125,7 +126,8 @@ class _SpendChartViewState extends State<SpendChartView> {
       bars.add(LineChartBarData(
         spots: spots,
         isCurved: true,
-        curveSmoothness: 0.3,
+        curveSmoothness: 0.2,
+        preventCurveOverShooting: true,
         color: color,
         barWidth: 2,
         isStrokeCapRound: true,
@@ -344,7 +346,8 @@ class _SpendChartViewState extends State<SpendChartView> {
           LineChartBarData(
             spots: spots,
             isCurved: spots.length > 1,
-            curveSmoothness: 0.3,
+            curveSmoothness: 0.2,
+            preventCurveOverShooting: true,
             color: savingsColor,
             barWidth: 1.5,
             isStrokeCapRound: true,

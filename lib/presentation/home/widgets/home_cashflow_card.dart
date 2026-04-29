@@ -341,6 +341,8 @@ List<LineChartBarData> _buildOverviewBars(
     LineChartBarData(
       spots: salarySpots,
       isCurved: true,
+      curveSmoothness: 0.2,
+      preventCurveOverShooting: true,
       color: const Color(0xFF34D399),
       barWidth: 2,
       dotData: const FlDotData(show: false),
@@ -348,6 +350,8 @@ List<LineChartBarData> _buildOverviewBars(
     LineChartBarData(
       spots: expenseSpots,
       isCurved: true,
+      curveSmoothness: 0.2,
+      preventCurveOverShooting: true,
       color: const Color(0xFFFB7185),
       barWidth: 2,
       dotData: const FlDotData(show: false),
@@ -355,6 +359,8 @@ List<LineChartBarData> _buildOverviewBars(
     LineChartBarData(
       spots: savingsSpots,
       isCurved: true,
+      curveSmoothness: 0.2,
+      preventCurveOverShooting: true,
       color: const Color(0xFF3B82F6),
       barWidth: 2,
       dotData: const FlDotData(show: false),
