@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nivvesh/application/auth/auth_provider.dart';
+import 'package:nivvesh/application/notifications/notifications_controller.dart';
 import 'package:nivvesh/application/user/user_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -17,11 +18,13 @@ part 'fcm_controller.g.dart';
 @Riverpod(keepAlive: true)
 class FcmController extends _$FcmController {
   StreamSubscription<String>? _refreshSub;
+  StreamSubscription<RemoteMessage>? _foregroundSub;
 
   @override
   FutureOr<void> build() {
     ref.onDispose(() {
       _refreshSub?.cancel();
+      _foregroundSub?.cancel();
     });
   }
 
@@ -44,6 +47,15 @@ class FcmController extends _$FcmController {
         _push,
         onError: (e) => debugPrint('FCM onTokenRefresh error: $e'),
       );
+
+      _foregroundSub ??= FirebaseMessaging.onMessage.listen(
+        (_) {
+          // Backend already persisted the notification — refresh the list
+          // so the bell-icon page reflects the new push.
+          ref.read(notificationsControllerProvider.notifier).refresh();
+        },
+        onError: (e) => debugPrint('FCM onMessage error: $e'),
+      );
     } catch (e) {
       debugPrint('FCM syncToken failed: $e');
     }
@@ -52,7 +64,9 @@ class FcmController extends _$FcmController {
   /// Clears the cached FCM token. Call on sign-out.
   Future<void> clear() async {
     await _refreshSub?.cancel();
+    await _foregroundSub?.cancel();
     _refreshSub = null;
+    _foregroundSub = null;
     try {
       await ref.read(userLocalDataSourceProvider).deleteFcmToken();
       if (_isSupported) {

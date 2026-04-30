@@ -55,13 +55,13 @@ class HomePage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverList(
                 delegate: SliverChildListDelegate(
-                  const [
+                  [
                     HomeHeader(),
-                    SizedBox(height: 20),
-                    HomeBalanceCard(),
-                    SizedBox(height: 20),
-                    HomeCashflowCard(),
-                    SizedBox(height: 80),
+                    const SizedBox(height: 20),
+                    const HomeBalanceCard(),
+                    const SizedBox(height: 20),
+                    const HomeCashflowCard(),
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),

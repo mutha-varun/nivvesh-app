@@ -6,7 +6,7 @@ part of 'fcm_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$fcmControllerHash() => r'b1a16a1249ace7e8d6d82d9ddedb8384d8128b54';
+String _$fcmControllerHash() => r'67c5f2d82df03b3b5ea8a6f990e86f1aff8a3f97';
 
 /// Handles FCM token lifecycle: requests permission, fetches the token,
 /// pushes it to the backend, and listens for refreshes.

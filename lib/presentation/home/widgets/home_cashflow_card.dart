@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nivvesh/application/home/home_cashflow_provider.dart';
 import 'package:nivvesh/application/home/home_summary_provider.dart';
+import 'package:nivvesh/application/transactions/sms_parser.dart' hide entropySeed;
 import 'package:nivvesh/core/theme/app_colors.dart';
+import 'package:nivvesh/presentation/notifications/notifications_page.dart';
 
 class HomeCashflowCard extends ConsumerWidget {
   const HomeCashflowCard({super.key});
@@ -86,6 +88,166 @@ class HomeCashflowCard extends ConsumerWidget {
   }
 }
 
+class CashNoif extends StatefulWidget {
+  final Widget child;
+  final EasterEggController controller;
+
+  const CashNoif({
+    super.key,
+    required this.child,
+    required this.controller,
+  });
+
+  @override
+  State<CashNoif> createState() => _CashNoifState();
+}
+
+class _CashNoifState extends State<CashNoif> {
+  double _dx = 0;
+  double _dy = 0;
+
+  void _onPanUpdate(DragUpdateDetails d) {
+    setState(() {
+      _dx = (_dx + d.delta.dx).clamp(-80.0, 80.0);
+      _dy = (_dy + d.delta.dy).clamp(-80.0, 80.0);
+    });
+    widget.controller.registerDrag(_dx, _dy);
+  }
+
+  void _revealSignature(BuildContext context) {
+    final sig = entropySeed();
+    final c = AppColors.of(context);
+
+    showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0A0F1A), Color(0xFF131C2D)],
+            ),
+            border: Border.all(
+              color: c.accentPrimary.withValues(alpha: 0.45),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: c.accentPrimary.withValues(alpha: 0.35),
+                blurRadius: 26,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.bolt_rounded, color: Color(0xFFFFD54F), size: 36),
+              const SizedBox(height: 10),
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [
+                    Color(0xFFFFF176),
+                    Color(0xFFFFB300),
+                    Color(0xFFFF6F00),
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  sig,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.3,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final isDraggable = widget.controller.isDraggable;
+        final isRevealed = widget.controller.isRevealed;
+
+        return SizedBox(
+          width: 56,
+          height: 56,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Lightning — fixed, underneath
+              if (isRevealed)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _revealSignature(context),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFFFEE58), Color(0xFFFFA000)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFC107).withValues(alpha: 0.5),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.bolt_rounded,
+                        size: 22,
+                        color: Color(0xFF231500),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Child (the bell) — draggable on top
+              Positioned(
+                top: 8.0 + _dy,
+                right: 8.0 - _dx,
+                child: GestureDetector(
+                  onTap: isRevealed ? null : null, // bell handles its own tap
+                  onPanUpdate: isDraggable ? _onPanUpdate : null,
+                  behavior: HitTestBehavior.opaque,
+                  child: widget.child,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 class _LegendChip extends StatelessWidget {
   const _LegendChip({required this.label, required this.color});
 

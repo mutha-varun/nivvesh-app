@@ -8,6 +8,7 @@ import 'package:nivvesh/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/presentation/journey/pages/journey_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
+import 'package:nivvesh/presentation/notifications/notifications_page.dart';
 import 'package:nivvesh/presentation/shell/main_shell.dart';
 import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
@@ -99,6 +100,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsPage(),
       ),
       GoRoute(
         path: '/investment',
