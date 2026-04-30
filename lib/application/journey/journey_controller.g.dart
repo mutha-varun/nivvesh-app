@@ -7,7 +7,7 @@ part of 'journey_controller.dart';
 // **************************************************************************
 
 String _$journeysControllerHash() =>
-    r'c4ccf9270e1cad3d8225459697320b5f7abb0310';
+    r'a40a965f76e693c2166f97ed4b94a580c552a2d8';
 
 /// See also [JourneysController].
 @ProviderFor(JourneysController)

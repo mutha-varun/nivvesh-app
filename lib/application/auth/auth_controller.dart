@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
+import 'package:nivvesh/application/notifications/fcm_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:nivvesh/application/auth/auth_provider.dart';
 
@@ -30,6 +31,7 @@ class SignInScreenController extends _$SignInScreenController {
 
       await ref.read(authStateProvider.notifier).setRedirectUrl(result.redirectUrl);
       ref.read(authStateProvider.notifier).markAuthenticated();
+      unawaited(ref.read(fcmControllerProvider.notifier).syncToken());
     });
   }
 }

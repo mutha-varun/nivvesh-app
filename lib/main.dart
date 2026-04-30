@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
@@ -49,6 +51,12 @@ void _handleLocalNotificationTap(NotificationResponse response) {
   }
 }
 
+/// Top-level FCM background handler — must be a top-level function.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 /// Top-level callback for WorkManager — must not be anonymous.
 @pragma('vm:entry-point')
 void workManagerCallbackDispatcher() {
@@ -62,6 +70,13 @@ void workManagerCallbackDispatcher() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('Firebase init failed: $e');
+  }
 
   final directory = await getApplicationDocumentsDirectory();
   final isar = Isar.instanceNames.isEmpty
