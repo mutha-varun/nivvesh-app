@@ -70,7 +70,7 @@ class NotificationBell extends StatelessWidget {
     final c = AppColors.of(context);
 
     return GestureDetector(
-      onTap: () => context.go('/notifications'),
+      onTap: () => context.push('/notifications'),
       child: Container(
         width: 40,
         height: 40,
