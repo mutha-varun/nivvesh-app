@@ -64,37 +64,47 @@ class AlertsPage extends ConsumerWidget {
                         Row(
                           children: [
                             Expanded(child: SectionLabel('ALERT THRESHOLDS', colors: c)),
-                            AddThresholdButton(onAdd: (percent) {
-                              ref.read(alertConfigProvider).addThreshold(percent);
+                            AddThresholdHeaderButton(onAdd: (percent) {
+                              ref.read(alertConfigProvider.notifier).addThreshold(percent);
                             }),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
-                          'Alert when % of monthly income (from credits) is spent.',
-                          style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+                          'Get notified when you’re nearing your spending limits.',
+                          style: TextStyle(color: c.muted, fontSize: 13),
                         ),
-                        const SizedBox(height: 10),
-                        if (config.thresholds.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: Text(
-                                'No alerts set. Tap + to add one.',
-                                style: TextStyle(color: c.muted, fontSize: 13),
-                              ),
-                            ),
-                          )
-                        else
-                          ...config.thresholds.map(
-                            (percent) => ThresholdTile(
-                              percent: percent,
-                              income: config.monthlyIncome,
-                              onDelete: () {
-                                ref.read(alertConfigProvider).removeThreshold(percent);
-                              },
-                            ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 56,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: EdgeInsets.zero,
+                            itemCount: config.thresholds.length + 1,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              if (index == config.thresholds.length) {
+                                return AddPlaceholder(
+                                  onTap: () {
+                                    showAddThresholdPicker(context, (percent) {
+                                      ref.read(alertConfigProvider.notifier).addThreshold(percent);
+                                    });
+                                  },
+                                );
+                              }
+
+                              final percent = config.thresholds[index];
+                              return ThresholdTile(
+                                percent: percent,
+                                onDelete: () {
+                                  ref.read(alertConfigProvider.notifier).removeThreshold(percent);
+                                },
+                              );
+                            },
                           ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1, thickness: 1, color: Colors.white10),
                         const SizedBox(height: 16),
                         SectionLabel('CATEGORY LIMITS', colors: c),
                         const SizedBox(height: 4),

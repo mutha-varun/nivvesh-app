@@ -59,10 +59,7 @@ class AlertsHeader extends StatelessWidget {
               ),
               Text(
                 'Manage your notifications',
-                style: TextStyle(
-                  color: c.muted,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: c.muted, fontSize: 12),
               ),
             ],
           ),
@@ -153,10 +150,7 @@ class SmartAlertCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(color: c.muted, fontSize: 11),
-                ),
+                Text(time, style: TextStyle(color: c.muted, fontSize: 11)),
               ],
             ),
           ),
@@ -234,7 +228,10 @@ class CategoryLimitSlider extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('₹0', style: TextStyle(color: c.muted, fontSize: 10)),
-              Text('₹${_formatInr(max)}', style: TextStyle(color: c.muted, fontSize: 10)),
+              Text(
+                '₹${_formatInr(max)}',
+                style: TextStyle(color: c.muted, fontSize: 10),
+              ),
             ],
           ),
         ],
@@ -280,162 +277,188 @@ class CategoryLimitSlider extends StatelessWidget {
   }
 }
 
-class ThresholdTile extends StatelessWidget {
-  const ThresholdTile({
-    required this.percent,
-    required this.income,
-    required this.onDelete,
-    super.key,
-  });
-
-  final int percent;
-  final double income;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    final amountStr = income > 0 ? '₹${(income * percent / 100).toStringAsFixed(0)}' : '';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: c.gold.withValues(alpha: 0.18),
-          ),
-          color: c.surfaceTintLow,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.notifications_active_rounded, color: _iconColor(percent, c.gold), size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$percent% of income',
-                    style: TextStyle(
-                      color: c.primaryText,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (amountStr.isNotEmpty)
-                    Text(
-                      'Triggers at $amountStr',
-                      style: TextStyle(color: c.muted, fontSize: 12),
-                    ),
-                ],
-              ),
-            ),
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onDelete,
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Icon(Icons.close_rounded, color: c.muted, size: 18),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Color _iconColor(int percent, Color defaultColor) {
-    if (percent >= 90) return const Color(0xFFFF5252);
-    if (percent >= 70) return const Color(0xFFFFB74D);
-    return defaultColor;
-  }
-}
-
-class AddThresholdButton extends StatelessWidget {
-  const AddThresholdButton({required this.onAdd, super.key});
-
+// The "Add" button that sits in the header row
+class AddThresholdHeaderButton extends StatelessWidget {
+  const AddThresholdHeaderButton({required this.onAdd, super.key});
   final void Function(int) onAdd;
 
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _showPicker(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.gold.withValues(alpha: 0.30)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add_rounded, color: c.gold, size: 16),
-            const SizedBox(width: 4),
-            Text(
-              'Add',
-              style: TextStyle(
-                color: c.gold,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
+    return OutlinedButton.icon(
+      onPressed: () => showAddThresholdPicker(context, onAdd),
+      icon: Icon(Icons.add, size: 18, color: c.gold),
+      label: Text('Add', style: TextStyle(color: c.gold, fontSize: 14)),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: c.gold.withValues(alpha: 0.3)),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+    );
+  }
+}
+
+// The clean status chip (No close button, matches the screenshot)
+class ThresholdTile extends StatelessWidget {
+  const ThresholdTile({required this.percent, required this.onDelete, super.key});
+  final int percent;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131517), // Deep charcoal background
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: Color(0xFFFFB800),
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '$percent%',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
             ),
-          ],
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onDelete,
+            child: const Padding(
+              padding: EdgeInsets.all(2),
+              child: Icon(Icons.close_rounded, color: Colors.white54, size: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// The dashed placeholder at the end of the list
+class AddPlaceholder extends StatelessWidget {
+  final VoidCallback onTap;
+  const AddPlaceholder({required this.onTap, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: Colors.white.withValues(alpha: 0.1),
+          radius: 16,
+        ),
+        child: const SizedBox(
+          width: 60,
+          height: 52,
+          child: Icon(Icons.add, color: Colors.white38, size: 24),
         ),
       ),
     );
   }
+}
 
-  void _showPicker(BuildContext context) {
-    final c = AppColors.of(context);
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: c.cardSurface,
-        title: Text('Add Alert', style: TextStyle(color: c.primaryText, fontSize: 16)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: TextStyle(color: c.primaryText),
-          decoration: InputDecoration(
-            suffixText: '%',
-            suffixStyle: TextStyle(color: c.muted),
-            hintText: 'e.g. 75',
-            hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.5)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: c.gold)),
-          ),
-          onSubmitted: (val) {
-            final percent = int.tryParse(val);
+Future<void> showAddThresholdPicker(
+  BuildContext context,
+  void Function(int) onAdd,
+) async {
+  final c = AppColors.of(context);
+  final controller = TextEditingController();
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: c.cardSurface,
+      title: Text('Add Alert', style: TextStyle(color: c.primaryText, fontSize: 16)),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        style: TextStyle(color: c.primaryText),
+        decoration: InputDecoration(
+          suffixText: '%',
+          suffixStyle: TextStyle(color: c.muted),
+          hintText: 'e.g. 75',
+          hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.5)),
+          enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: c.gold)),
+        ),
+        onSubmitted: (val) {
+          final percent = int.tryParse(val);
+          if (percent != null && percent > 0 && percent <= 100) {
+            onAdd(percent);
+          }
+          Navigator.pop(ctx);
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            final percent = int.tryParse(controller.text);
             if (percent != null && percent > 0 && percent <= 100) {
               onAdd(percent);
             }
             Navigator.pop(ctx);
           },
+          child: Text('Add', style: TextStyle(color: c.gold)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final percent = int.tryParse(controller.text);
-              if (percent != null && percent > 0 && percent <= 100) {
-                onAdd(percent);
-              }
-              Navigator.pop(ctx);
-            },
-            child: Text('Add', style: TextStyle(color: c.gold)),
-          ),
-        ],
-      ),
-    );
+      ],
+    ),
+  );
+}
+
+
+class _DashedBorderPainter extends CustomPainter {
+  _DashedBorderPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
+          Radius.circular(radius),
+        ),
+      );
+
+    const dashLength = 4.5;
+    const dashGap = 3.5;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = (distance + dashLength).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance += dashLength + dashGap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.radius != radius;
   }
 }
