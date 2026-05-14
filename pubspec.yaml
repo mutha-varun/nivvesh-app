@@ -1,5 +1,5 @@
 name: nivvesh
-description: "A new Flutter project."
+description: "Nivvesh — personal finance companion (cashflow, SMS-backed history on Android, journeys, alerts, optional Gemini AI)."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 

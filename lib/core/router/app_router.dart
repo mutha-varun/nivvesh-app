@@ -12,6 +12,7 @@ import 'package:nivvesh/presentation/notifications/notifications_page.dart';
 import 'package:nivvesh/presentation/shell/main_shell.dart';
 import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
+import 'package:nivvesh/core/constants/public_web_urls.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -120,7 +121,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/bank',
         builder: (context, state) => const InAppWebViewScreen(
-          url: 'https://nivvesh.fixerra.in/',
+          url: nivveshFdsWebUrl,
           title: 'Bank',
         ),
       ),

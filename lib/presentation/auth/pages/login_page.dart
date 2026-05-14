@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_controller.dart';
+import 'package:nivvesh/core/constants/public_web_urls.dart';
 import 'package:nivvesh/webview/screens/support_webview.dart';
 import 'package:pinput/pinput.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -86,7 +87,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const SupportWebView(
-                            url: 'https://nivvesh.fixerra.in/support',
+                            url: nivveshSupportWebUrl,
                             title: '',
                           ),
                         ),
