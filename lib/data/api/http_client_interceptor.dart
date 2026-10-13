@@ -12,11 +12,6 @@ final httpClientProvider = Provider<HttpClientInterceptor>((ref) {
   return HttpClientInterceptor(ref);
 });
 
-/// Provides a simple HTTP client without authentication interceptors.
-final httpSimpleClientProvider = Provider<http.Client>((ref) {
-  return http.Client();
-});
-
 /// HTTP client interceptor that handles authentication automatically.
 ///
 /// Adds access tokens to all requests and automatically refreshes
@@ -44,12 +39,10 @@ class HttpClientInterceptor extends http.BaseClient {
     final response = await _inner.send(request);
 
     if (response.statusCode == 401) {
-      print("Access token expired. Attempting to refresh...");
       try {
         final newAccessToken = await _refreshToken();
 
         if (newAccessToken != null) {
-          print("Token refreshed. Retrying original request...");
           final newHeaders = Map<String, String>.from(request.headers);
           newHeaders['Authorization'] = newAccessToken;
           
@@ -60,7 +53,6 @@ class HttpClientInterceptor extends http.BaseClient {
           return _inner.send(newRequest);
         }
       } catch (e) {
-        print("Failed to refresh token: $e. Logging out.");
         // If refresh fails, log the user out
         // _ref.read(authServiceProvider).signOut();
       }

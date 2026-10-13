@@ -180,7 +180,6 @@ class _CashNoifState extends State<CashNoif> {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
 
     return ListenableBuilder(
       listenable: widget.controller,

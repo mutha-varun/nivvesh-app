@@ -13,21 +13,6 @@ final authLocalDataSourceProvider = Provider<AuthLocalDataSource>((ref) {
   return AuthLocalDataSource(ref.watch(secureStorageProvider));
 });
 
-
-// Provider to fetch both tokens at once
-final savedTokensProvider = FutureProvider<Map<String, String?>>((ref) async {
-  final localDataSource = ref.watch(authLocalDataSourceProvider);
-  final accessToken = await localDataSource.getAccessToken();
-  final refreshToken = await localDataSource.getRefreshToken();
-  return {
-    'accessToken': accessToken,
-    'refreshToken': refreshToken,
-  };
-});
-
-
-
-
 // 2. Provider for API class
 // This also creates a single instance.
 final authApiProvider = Provider<AuthApi>(
