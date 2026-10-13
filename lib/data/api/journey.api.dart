@@ -13,15 +13,15 @@ class JourneyApi extends ApiClient {
     },
   );
 
-  /// Returns URI for fetching a single journey (GET /journeys/<journey_id>).
+  /// Returns URI for fetching a single journey (GET /journeys/{journey_id}).
   Uri getJourneyById(int journeyId) =>
       buildUri(endpoint: 'journeys/$journeyId');
 
-  /// Returns URI for updating a journey (PUT /journeys/<journey_id>).
+  /// Returns URI for updating a journey (PUT /journeys/{journey_id}).
   Uri updateJourneyById(int journeyId) =>
       buildUri(endpoint: 'journeys/$journeyId');
 
-  /// Returns URI for deleting a journey (DELETE /journeys/<journey_id>).
+  /// Returns URI for deleting a journey (DELETE /journeys/{journey_id}).
   Uri deleteJourneyById(int journeyId) =>
       buildUri(endpoint: 'journeys/$journeyId');
 

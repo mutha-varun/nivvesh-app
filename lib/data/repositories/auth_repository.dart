@@ -41,7 +41,6 @@ class AuthRepository {
     );
 
     if (response.statusCode != 200) {
-      print("///////failed to send OTP: ${response.statusCode} - ${response.body}");
       return ApiResponseHandler.handleErrorResponse(response);
     }
 
