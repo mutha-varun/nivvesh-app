@@ -4,13 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:nivvesh/application/auth/auth_state_provider.dart';
 import 'package:nivvesh/presentation/ai/pages/ai_chat_page.dart';
 import 'package:nivvesh/presentation/alerts/alerts_page.dart';
-import 'package:nivvesh/presentation/home/pages/investment_page.dart';
 import 'package:nivvesh/presentation/journey/pages/journey_page.dart';
 import 'package:nivvesh/presentation/auth/pages/login_page.dart';
 import 'package:nivvesh/presentation/home/pages/homepage.dart';
 import 'package:nivvesh/presentation/notifications/notifications_page.dart';
 import 'package:nivvesh/presentation/shell/main_shell.dart';
-import 'package:nivvesh/presentation/shared/pages/splash_page.dart';
 import 'package:nivvesh/presentation/transactions/pages/spend_page.dart';
 import 'package:nivvesh/core/constants/public_web_urls.dart';
 import 'package:nivvesh/webview/screens/bank_inappWebView.dart';
@@ -105,18 +103,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsPage(),
-      ),
-      GoRoute(
-        path: '/investment',
-        builder: (context, state) => const InvestmentPage(),
-      ),
-      GoRoute(
-        path: '/finance',
-        builder: (context, state) => const FinanceEntrySplash(),
-      ),
-      GoRoute(
-        path: '/finance/sheet',
-        builder: (context, state) => const HistoryPage(),
       ),
       GoRoute(
         path: '/bank',
