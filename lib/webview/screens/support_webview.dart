@@ -89,9 +89,9 @@ class SupportWebViewState extends State<SupportWebView> {
                   // helpful for debugging JS console logs
                   log('Console: ${consoleMsg.message}');
                 },
-                onLoadError: (controller, uri, code, message) {
+                onReceivedError: (controller, uri, code) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error loading page: $message')),
+                    SnackBar(content: Text('Error loading page: ${code.description}')),
                   );
                 },
               ),

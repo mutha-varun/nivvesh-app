@@ -17,6 +17,7 @@ class InAppWebViewScreen extends StatefulWidget {
 
 class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
   InAppWebViewController? _webViewController;
+  bool _canPop = true;
 
   @override
   void initState() {
@@ -30,8 +31,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
     try {
       final schemeMatch = RegExp(r'scheme=([a-zA-Z0-9+.-]+);').firstMatch(raw);
       final scheme = schemeMatch != null ? schemeMatch.group(1) : 'upi';
-      final converted =
-          raw.replaceFirst('intent://', '$scheme://').split('#Intent')[0];
+      final converted = 
+      raw
+          .replaceFirst('intent://', '$scheme://')
+          .split('#Intent')[0];
       return converted;
     } catch (e) {
       log('intent conversion error: $e');
@@ -53,8 +56,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
     if (uri == null) return false;
 
     try {
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       return launched;
     } catch (e, st) {
       log('openExternalUrl exception: $e\n$st');
@@ -63,12 +68,14 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
   }
 
   Future<NavigationActionPolicy> _shouldOverrideUrlLoading(
-      NavigationAction action) async {
+    NavigationAction action,
+  ) async {
     final url = action.request.url.toString();
     if (url.isEmpty) return NavigationActionPolicy.ALLOW;
 
     final lower = url.toLowerCase();
-    final isCustom = lower.startsWith('upi://') ||
+    final isCustom =
+        lower.startsWith('upi://') ||
         lower.startsWith('intent://') ||
         lower.startsWith('gpay://') ||
         lower.startsWith('phonepe://') ||
@@ -82,27 +89,48 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
 
     if (!opened && mounted) {
       // keep UI minimal: use a snackbar instead of dialog (less intrusive)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment app not found.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Payment app not found.')));
     }
 
     return NavigationActionPolicy.CANCEL;
   }
 
-  Future<bool> _onWillPop() async {
+  Future<void> _updateCanPop(InAppWebViewController controller) async {
+    final canGoBack = await controller.canGoBack();
+    if (mounted) {
+      setState(() {
+        _canPop = !canGoBack;
+      });
+    }
+  }
+
+  Future<void> _onPopInvoked(bool didPop) async {
+    if (didPop) return;
+
     final controller = _webViewController;
     if (controller != null && await controller.canGoBack()) {
       await controller.goBack();
-      return false;
+      await _updateCanPop(controller);
+      return;
     }
-    return true;
+
+    if (mounted) {
+      setState(() {
+        _canPop = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).maybePop();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: _canPop,
+      onPopInvokedWithResult: (didPop, result) => _onPopInvoked(didPop),
       child: Scaffold(
         // No AppBar — full-screen WebView like a mobile app
         body: SafeArea(
@@ -118,6 +146,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
             ),
             onWebViewCreated: (controller) {
               _webViewController = controller;
+              _updateCanPop(controller);
+            },
+            onUpdateVisitedHistory: (controller, url, isReload) {
+              _updateCanPop(controller);
             },
             onLoadStart: (controller, uri) {
               // no progress UI
@@ -134,10 +166,10 @@ class _InAppWebViewScreenState extends State<InAppWebViewScreen> {
             onConsoleMessage: (controller, consoleMsg) {
               log('Console: ${consoleMsg.message}');
             },
-            onLoadError: (controller, uri, code, message) {
+            onReceivedError: (controller, uri, code) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error loading page: $message')),
+                  SnackBar(content: Text('Error loading page: ${code.description}')),
                 );
               }
             },
